@@ -2899,7 +2899,7 @@ function guia6CalcularFracaoRemanescente(dataAjuizamento) {
     if (isNaN(dia) || dia < 1 || dia > 31) return 0;
 
     // O projeto utiliza a convenção proporcional de 30 dias.
-    var diasRemanescentes = Math.max(0, 30 - dia + 1);
+    var diasRemanescentes = Math.max(0, 30 - dia);
     return diasRemanescentes / 30;
 }
 
