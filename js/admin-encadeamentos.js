@@ -3173,14 +3173,13 @@ function guia6CompetenciaDentroDaEvolucao(competenciaISO) {
     var competenciaNum = guia5ISOParaNumero(competenciaISO);
     if (isNaN(competenciaNum)) return false;
 
-    // DIP, quando informada, impede considerar como vincenda uma competência
-    // anterior ao início efetivo do pagamento. Um eventual DCB específico do
-    // benefício devido, se existir no DOM, também funciona como limitador final.
-    var dipISO = guia6ObterMarcoCompetenciaISO('dipDevido', false);
-    if (dipISO && competenciaNum < guia5ISOParaNumero(dipISO)) {
-        return false;
-    }
-
+    // Na Formação da Demanda, a DIP NÃO delimita a existência da vincenda.
+    // Ela pode alterar o valor da diferença (por exemplo, pela existência de
+    // benefício recebido a partir da DIP), mas a competência posterior ao
+    // ajuizamento continua pertencendo ao período das vincendas.
+    //
+    // O limite final da competência é dado pela DCB do benefício devido,
+    // quando existente, e pelo fim real da evolução.
     var dcbISO = guia6ObterMarcoCompetenciaISO('dcbDevido', true);
     if (dcbISO && competenciaNum > guia5ISOParaNumero(dcbISO)) {
         return false;
@@ -3291,8 +3290,25 @@ function guia6CalcularVencidasAjustadas(valorTotalAtualizado, dataAjuizamento, t
         return valorTotalAtualizado;
     }
 
+    // A competência do ajuizamento é a última competência das vencidas.
+    // Quando o tratamento é proporcional, somente a fração já vencida do
+    // principal corrigido dessa competência integra as vencidas.
+    //
+    // Importante: a SELIC (e eventuais juros) da competência do ajuizamento
+    // NÃO deve ser proporcionalizada nem permanecer nas vencidas. A parcela
+    // do ajuizamento é tratada separadamente e, portanto, o cálculo aqui
+    // remove integralmente o total atualizado da competência e repõe apenas
+    // sua fração vencida do principal corrigido.
     var fracaoVencida = guia6CalcularFracaoVencida(dataAjuizamento);
-    return valorTotalAtualizado - (item.total * (1 - fracaoVencida));
+    var valorCorrigidoCompetencia = Number(item.valorCorrigido);
+
+    if (isNaN(valorCorrigidoCompetencia)) {
+        return valorTotalAtualizado;
+    }
+
+    return valorTotalAtualizado
+        - (Number(item.total) || 0)
+        + (valorCorrigidoCompetencia * fracaoVencida);
 }
 
 function guia6ObterProximaCompetenciaISO(iso) {
