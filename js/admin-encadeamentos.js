@@ -3253,13 +3253,12 @@ function calcularParcelaAjuizamento() {
         return 0;
     }
 
-    // Na Formação da Demanda, a parcela do mês do ajuizamento é a própria
-    // diferença devida naquela competência, após a atualização até o
-    // ajuizamento. A evolução do benefício serve para projetar as
-    // competências futuras, mas não substitui a diferença da Guia 4.
+    // A parcela-base das vincendas é o principal corrigido da competência
+    // do ajuizamento, sem SELIC. A SELIC pertence à memória das vencidas e
+    // não deve contaminar a base usada para projetar vincendas.
     var itemAtualizacao = guia6ObterItemAtualizacaoAjuizamento();
     if (itemAtualizacao) {
-        return Number(itemAtualizacao.total) || 0;
+        return Number(itemAtualizacao.valorCorrigido) || 0;
     }
 
     console.warn('[Guia 6] Não foi localizada a diferença da competência do ajuizamento.');
@@ -3331,17 +3330,32 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
     }
 
     if (metodo === '1_parcela_anual') {
-        var baseAnual = Number(parcelaAjuizamento) || 0;
+        var parcelaBase = Number(parcelaAjuizamento) || 0;
+        var primeiraParcela = parcelaBase;
+        var quantidadeDemaisParcelas = 11;
 
         if (tratamento === 'proporcional') {
-            baseAnual = baseAnual * guia6CalcularFracaoRemanescente(dataAjuizamento);
+            primeiraParcela = parcelaBase * guia6CalcularFracaoRemanescente(dataAjuizamento);
         }
 
+        var valorDemaisParcelas = parcelaBase * quantidadeDemaisParcelas;
+        var totalAnual = primeiraParcela + valorDemaisParcelas;
+
         return {
-            valor: baseAnual * 12,
+            valor: totalAnual,
             parcelas: [],
             quantidadeParcelas: 12,
-            metodo: metodo
+            metodo: metodo,
+            resumoAnual: {
+                parcelaBase: parcelaBase,
+                fracaoPrimeiraParcela: tratamento === 'proporcional'
+                    ? guia6CalcularFracaoRemanescente(dataAjuizamento)
+                    : 1,
+                primeiraParcela: primeiraParcela,
+                quantidadeDemaisParcelas: quantidadeDemaisParcelas,
+                valorDemaisParcelas: valorDemaisParcelas,
+                total: totalAnual
+            }
         };
     }
 
@@ -3562,7 +3576,7 @@ function calcularFormacaoDemanda() {
         var valorAposRenuncia = valorDemanda - renuncia;
         var acordo = calcularAcordo(valorAposRenuncia, parametros);
 
-        window.resultadoAjuizamento = {
+            window.resultadoAjuizamento = {
             valorVencidasAjuizamento: valorVencidas,
             parcelaAjuizamento: parcelaAjuizamento,
             valorVincendas: valorVincendas,
@@ -3580,10 +3594,12 @@ function calcularFormacaoDemanda() {
             valorFinal: acordo.valorFinal,
             parcelasVincendas: vincendas.parcelas,
             quantidadeParcelasVincendas: vincendas.quantidadeParcelas,
+            resumoVincendasAnual: vincendas.resumoAnual || null,
             desatualizado: false
         };
 
         renderizarFormacaoDemanda();
+        renderizarMemoriaVincendas();
 
         if (status) {
             status.textContent = '✅ Formação da demanda calculada com sucesso.';
@@ -3607,9 +3623,40 @@ function renderizarMemoriaAjuizamento() {
 
     if (!resultado || !tbody) return;
 
+    var itens = resultado.itens || [];
+    var competenciaAjuizamentoISO = guia6ObterCompetenciaAjuizamentoISO();
+    var tratamento = window.parametrosFormacaoDemanda
+        ? window.parametrosFormacaoDemanda.tratamentoMesAjuizamento
+        : 'integral';
+    var fracaoVencida = tratamento === 'proporcional'
+        ? guia6CalcularFracaoVencida(
+            window.parametrosFormacaoDemanda
+                ? window.parametrosFormacaoDemanda.dataAjuizamento
+                : ''
+        )
+        : 1;
+
+    var itensExibicao = itens.map(function(item) {
+        var copia = Object.assign({}, item);
+        if (tratamento === 'proporcional' && item.competenciaISO === competenciaAjuizamentoISO) {
+            // Na memória visual das vencidas, a competência do ajuizamento
+            // mostra exatamente a parcela que pertence às vencidas:
+            // principal corrigido proporcional e SELIC zero.
+            copia.diferenca = (Number(item.diferenca) || 0) * fracaoVencida;
+            copia.valorCorrigido = (Number(item.valorCorrigido) || 0) * fracaoVencida;
+            copia.percentualJurosTotal = 0;
+            copia.valorJuros = 0;
+            copia.percentualSelic = 0;
+            copia.valorSelic = 0;
+            copia.detalhamentoSelic = [];
+            copia.total = copia.valorCorrigido;
+        }
+        return copia;
+    });
+
     tbody.innerHTML = '';
 
-    resultado.itens.forEach(function(item) {
+    itensExibicao.forEach(function(item) {
         var tr = document.createElement('tr');
         tr.className = 'border-b border-slate-200 hover:bg-slate-50';
 
@@ -3618,8 +3665,8 @@ function renderizarMemoriaAjuizamento() {
             formatarMoedaAtualizacao(item.diferenca),
             item.coeficiente !== undefined ? Number(item.coeficiente).toFixed(10) : '-',
             formatarMoedaAtualizacao(item.valorCorrigido),
-            formatarMoedaAtualizacao(0),
-            formatarMoedaAtualizacao(item.valorSelic),
+            formatarMoedaAtualizacao(item.valorJuros || 0),
+            formatarMoedaAtualizacao(item.valorSelic || 0),
             formatarMoedaAtualizacao(item.total)
         ];
 
@@ -3633,17 +3680,116 @@ function renderizarMemoriaAjuizamento() {
         tbody.appendChild(tr);
     });
 
+    var totalOriginalExibicao = itensExibicao.reduce(function(soma, item) {
+        return soma + (Number(item.diferenca) || 0);
+    }, 0);
+    var totalCorrigidoExibicao = itensExibicao.reduce(function(soma, item) {
+        return soma + (Number(item.valorCorrigido) || 0);
+    }, 0);
+    var totalJurosExibicao = itensExibicao.reduce(function(soma, item) {
+        return soma + (Number(item.valorJuros) || 0);
+    }, 0);
+    var totalSelicExibicao = itensExibicao.reduce(function(soma, item) {
+        return soma + (Number(item.valorSelic) || 0);
+    }, 0);
+    var totalAtualizadoExibicao = itensExibicao.reduce(function(soma, item) {
+        return soma + (Number(item.total) || 0);
+    }, 0);
+
     var originalEl = document.getElementById('totalOriginalAjuizamento');
     var corrigidoEl = document.getElementById('totalCorrigidoAjuizamento');
     var jurosEl = document.getElementById('totalJurosAjuizamento');
     var selicEl = document.getElementById('totalSelicAjuizamento');
     var totalEl = document.getElementById('totalAtualizadoAjuizamento');
 
-    if (originalEl) originalEl.textContent = formatarMoedaAtualizacao(resultado.totalOriginal);
-    if (corrigidoEl) corrigidoEl.textContent = formatarMoedaAtualizacao(resultado.totalCorrigido);
-    if (jurosEl) jurosEl.textContent = formatarMoedaAtualizacao(0);
-    if (selicEl) selicEl.textContent = formatarMoedaAtualizacao(resultado.totalSelic);
-    if (totalEl) totalEl.textContent = formatarMoedaAtualizacao(resultado.totalAtualizado);
+    if (originalEl) originalEl.textContent = formatarMoedaAtualizacao(totalOriginalExibicao);
+    if (corrigidoEl) corrigidoEl.textContent = formatarMoedaAtualizacao(totalCorrigidoExibicao);
+    if (jurosEl) jurosEl.textContent = formatarMoedaAtualizacao(totalJurosExibicao);
+    if (selicEl) selicEl.textContent = formatarMoedaAtualizacao(totalSelicExibicao);
+    if (totalEl) totalEl.textContent = formatarMoedaAtualizacao(totalAtualizadoExibicao);
+}
+
+function renderizarMemoriaVincendas() {
+    var resultado = window.resultadoAjuizamento;
+    var painel = document.getElementById('painelMemoriaVincendas');
+    var tbody = document.getElementById('corpoMemoriaVincendas');
+    var blocoAnual = document.getElementById('resumoVincendasAnual');
+    var blocoAte12 = document.getElementById('tabelaVincendasAte12');
+
+    if (!painel || !tbody || !resultado) return;
+
+    var metodo = window.parametrosFormacaoDemanda
+        ? window.parametrosFormacaoDemanda.metodoVincendas
+        : null;
+
+    var exibir = metodo === '1_parcela_anual' || metodo === 'ate_12';
+    painel.classList.toggle('hidden', !exibir);
+
+    if (blocoAnual) blocoAnual.classList.toggle('hidden', metodo !== '1_parcela_anual');
+    if (blocoAte12) blocoAte12.classList.toggle('hidden', metodo !== 'ate_12');
+
+    if (!exibir) return;
+
+    if (metodo === '1_parcela_anual') {
+        var anual = resultado.resumoVincendasAnual || null;
+        if (!anual) {
+            tbody.innerHTML = '';
+            return;
+        }
+
+        var fracaoEl = document.getElementById('vincendaAnualFracao');
+        var primeiraEl = document.getElementById('vincendaAnualPrimeira');
+        var qtdEl = document.getElementById('vincendaAnualQtdDemais');
+        var demaisEl = document.getElementById('vincendaAnualDemais');
+        var baseEl = document.getElementById('vincendaAnualBase');
+        var totalEl = document.getElementById('vincendaAnualTotal');
+
+        if (baseEl) baseEl.textContent = formatarMoedaAtualizacao(anual.parcelaBase);
+        var baseDemaisEl = document.getElementById('vincendaAnualBaseDemais');
+        if (baseDemaisEl) baseDemaisEl.textContent = formatarMoedaAtualizacao(anual.parcelaBase) + ' por parcela';
+        if (fracaoEl) fracaoEl.textContent = (Number(anual.fracaoPrimeiraParcela) * 100).toLocaleString('pt-BR', {minimumFractionDigits: 4, maximumFractionDigits: 4}) + '%';
+        if (primeiraEl) primeiraEl.textContent = formatarMoedaAtualizacao(anual.primeiraParcela);
+        if (qtdEl) qtdEl.textContent = String(anual.quantidadeDemaisParcelas);
+        if (demaisEl) demaisEl.textContent = formatarMoedaAtualizacao(anual.valorDemaisParcelas);
+        if (totalEl) totalEl.textContent = formatarMoedaAtualizacao(anual.total);
+
+        tbody.innerHTML = '';
+        return;
+    }
+
+    tbody.innerHTML = '';
+    if (metodo !== 'ate_12') return;
+
+    var parcelas = Array.isArray(resultado.parcelasVincendas) ? resultado.parcelasVincendas : [];
+    parcelas.forEach(function(parcela) {
+        var tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-200 hover:bg-slate-50';
+        var valores = [
+            parcela.competencia,
+            formatarMoedaAtualizacao(parcela.valor),
+            '1,000000',
+            formatarMoedaAtualizacao(parcela.valor),
+            '0,00%',
+            formatarMoedaAtualizacao(0),
+            formatarMoedaAtualizacao(parcela.valor)
+        ];
+        valores.forEach(function(valor, index) {
+            var td = document.createElement('td');
+            td.className = 'p-2 ' + (index === 0 ? 'font-semibold' : 'text-right font-mono');
+            td.textContent = valor;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+
+    var totalElAte12 = document.getElementById('totalMemoriaVincendas');
+    var qtdElAte12 = document.getElementById('quantidadeMemoriaVincendas');
+    if (totalElAte12) totalElAte12.textContent = formatarMoedaAtualizacao(resultado.valorVincendas);
+    if (qtdElAte12) qtdElAte12.textContent = String(resultado.quantidadeParcelasVincendas || 0) + ' parcelas';
+    var totalRodapeEl = document.getElementById('totalMemoriaVincendasRodapeValor');
+    var qtdRodapeEl = document.getElementById('quantidadeMemoriaVincendasRodape');
+    if (totalRodapeEl) totalRodapeEl.textContent = formatarMoedaAtualizacao(resultado.valorVincendas);
+    if (qtdRodapeEl) qtdRodapeEl.textContent = String(resultado.quantidadeParcelasVincendas || 0) + ' parcelas';
 }
 
 function renderizarFormacaoDemanda() {
@@ -3721,6 +3867,7 @@ window.calcularRenunciaAjuizamento = calcularRenunciaAjuizamento;
 window.calcularAcordo = calcularAcordo;
 window.calcularFormacaoDemanda = calcularFormacaoDemanda;
 window.renderizarMemoriaAjuizamento = renderizarMemoriaAjuizamento;
+window.renderizarMemoriaVincendas = renderizarMemoriaVincendas;
 window.renderizarFormacaoDemanda = renderizarFormacaoDemanda;
 
 // =====================================================================
