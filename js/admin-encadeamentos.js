@@ -3073,27 +3073,33 @@ function guia6ObterItemMemoriaEvolucao(competenciaISO) {
 }
 
 function guia6ObterValorEvolucaoNaCompetencia(competenciaISO) {
+    var competencia = guia6ISOParaCompetencia(competenciaISO);
     var itemMemoria = guia6ObterItemMemoriaEvolucao(competenciaISO);
+
+    // A memória de evolução pode conter apenas os marcos de reajuste/piso.
+    // Quando a competência solicitada estiver nela, ela continua sendo a
+    // fonte preferencial e evita recalcular desnecessariamente.
     if (itemMemoria) {
-        return {
-            valor: Number(itemMemoria.valorFinal) || 0,
-            resultado: {
-                memoria: guia6ObterMemoriaEvolucaoReal(),
-                rmaFinal: Number(itemMemoria.valorFinal) || 0
-            },
-            origem: 'memoriaEvolucaoDevida'
-        };
+        var valorMemoria = Number(itemMemoria.valorFinal);
+        if (!isNaN(valorMemoria) && valorMemoria > 0) {
+            return {
+                valor: valorMemoria,
+                resultado: {
+                    memoria: guia6ObterMemoriaEvolucaoReal(),
+                    rmaFinal: valorMemoria
+                },
+                origem: 'memoriaEvolucaoDevida'
+            };
+        }
     }
 
-    if (guia6ObterMemoriaEvolucaoReal()) {
-        throw new Error('A competência ' + guia6ISOParaCompetencia(competenciaISO) + ' não existe na memória real da evolução.');
-    }
-
+    // A ausência de uma competência na memória NÃO significa que ela seja
+    // inexistente. A memória real é esparsa (marcos de evolução), enquanto
+    // calcularEvolucao() consegue obter o valor mensal entre esses marcos.
     if (typeof calcularEvolucao !== 'function') {
         throw new Error('Motor de evolução não está disponível.');
     }
 
-    var competencia = guia6ISOParaCompetencia(competenciaISO);
     var parametros = guia6ObterParametrosEvolucao(competencia);
     var resultado = calcularEvolucao(parametros);
 
@@ -3101,24 +3107,45 @@ function guia6ObterValorEvolucaoNaCompetencia(competenciaISO) {
         throw new Error('Não foi possível obter o valor da evolução em ' + competencia + '.');
     }
 
+    var valorCalculado = Number(resultado.rmaFinal);
+    if (isNaN(valorCalculado) || valorCalculado <= 0) {
+        throw new Error('A evolução calculada em ' + competencia + ' não possui valor mensal válido.');
+    }
+
     return {
-        valor: Number(resultado.rmaFinal) || 0,
+        valor: valorCalculado,
         resultado: resultado,
         origem: 'calcularEvolucao'
     };
 }
 
 function guia6ObterFimRealEvolucaoISO() {
-    var memoria = guia6ObterMemoriaEvolucaoReal();
-    if (memoria && memoria.length) {
-        var ultimo = memoria[memoria.length - 1];
-        var isoMemoria = guia6NormalizarCompetenciaItem(ultimo.competencia);
-        if (isoMemoria) return isoMemoria;
+    // A Data Final da evolução é o marco temporal principal. A memória pode
+    // ser esparsa e conter somente os meses em que houve reajuste/piso; ela
+    // não deve encurtar artificialmente a evolução mensal.
+    var dataFinal = document.getElementById('dataFinal');
+    if (dataFinal && dataFinal.value) {
+        var isoDataFinal = guia5CompetenciaParaISO(dataFinal.value.trim());
+        if (isoDataFinal) return isoDataFinal;
     }
 
-    var dataFinal = document.getElementById('dataFinal');
-    if (!dataFinal || !dataFinal.value) return null;
-    return guia5CompetenciaParaISO(dataFinal.value.trim());
+    // Fallback para memórias antigas que não possuam Data Final disponível.
+    var memoria = guia6ObterMemoriaEvolucaoReal();
+    if (memoria && memoria.length) {
+        var maiorISO = null;
+        var maiorNum = -Infinity;
+        for (var i = 0; i < memoria.length; i++) {
+            var isoMemoria = guia6NormalizarCompetenciaItem(memoria[i].competencia);
+            var numMemoria = guia5ISOParaNumero(isoMemoria);
+            if (isoMemoria && !isNaN(numMemoria) && numMemoria > maiorNum) {
+                maiorNum = numMemoria;
+                maiorISO = isoMemoria;
+            }
+        }
+        if (maiorISO) return maiorISO;
+    }
+
+    return null;
 }
 
 function guia6ObterMarcoCompetenciaISO(id, tratarComoFimDoMes) {
@@ -3159,16 +3186,12 @@ function guia6CompetenciaDentroDaEvolucao(competenciaISO) {
         return false;
     }
 
-    var memoria = guia6ObterMemoriaEvolucaoReal();
-    if (memoria && memoria.length) {
-        // A memória real é a fonte de verdade: se a competência não existe,
-        // não criar uma parcela artificial além do fim efetivo da evolução.
-        return guia6ObterItemMemoriaEvolucao(competenciaISO) !== null;
-    }
-
     var fimISO = guia6ObterFimRealEvolucaoISO();
     if (!fimISO) return false;
 
+    // A competência precisa estar dentro do período efetivamente evoluído,
+    // mas não precisa existir como linha explícita na memória de reajustes.
+    // Competências intermediárias são obtidas pelo motor de evolução.
     return competenciaNum <= guia5ISOParaNumero(fimISO);
 }
 
@@ -3231,13 +3254,17 @@ function calcularParcelaAjuizamento() {
         return 0;
     }
 
-    try {
-        var evolucao = guia6ObterValorEvolucaoNaCompetencia(competenciaISO);
-        return Number(evolucao.valor) || 0;
-    } catch (e) {
-        console.warn('[Guia 6] Parcela do ajuizamento inexistente na evolução real:', e.message);
-        return 0;
+    // Na Formação da Demanda, a parcela do mês do ajuizamento é a própria
+    // diferença devida naquela competência, após a atualização até o
+    // ajuizamento. A evolução do benefício serve para projetar as
+    // competências futuras, mas não substitui a diferença da Guia 4.
+    var itemAtualizacao = guia6ObterItemAtualizacaoAjuizamento();
+    if (itemAtualizacao) {
+        return Number(itemAtualizacao.total) || 0;
     }
+
+    console.warn('[Guia 6] Não foi localizada a diferença da competência do ajuizamento.');
+    return 0;
 }
 
 function guia6ObterItemAtualizacaoAjuizamento() {
@@ -3329,7 +3356,10 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
         var valorMensal = valorMensalIntegral;
 
         if (cursor === competenciaAjuizamentoISO && tratamento === 'proporcional') {
-            valorMensal = valorMensalIntegral * guia6CalcularFracaoRemanescente(dataAjuizamento);
+            // A primeira vincenda proporcional é a diferença do mês do
+            // ajuizamento. As demais competências usam o valor integral da
+            // evolução do benefício.
+            valorMensal = (Number(parcelaAjuizamento) || 0) * guia6CalcularFracaoRemanescente(dataAjuizamento);
         }
 
         var competenciaBR = guia6ISOParaCompetencia(cursor);
@@ -3718,15 +3748,22 @@ document.addEventListener('DOMContentLoaded', function() {
     camposGuia6.forEach(function(id) {
         var el = document.getElementById(id);
         if (!el) return;
-        el.addEventListener('input', function() {
-            guia6InvalidarResultado();
-        });
-        el.addEventListener('change', function() {
-            guia6InvalidarResultado();
+
+        function sincronizarGuia6() {
+            // Alguns campos alteram outros controles da seção de acordo
+            // (por exemplo, desativar o acordo força 100%). Atualizamos a UI
+            // primeiro e, em seguida, coletamos o estado completo para que o
+            // objeto global reflita exatamente o que está na tela.
             if (id === 'acordoAtivo' || id === 'percentualAcordoPreset') {
                 guia6AtualizarEstadoAcordo();
             }
-        });
+
+            guia6ColetarParametrosFormacaoDemanda();
+            guia6InvalidarResultado();
+        }
+
+        el.addEventListener('input', sincronizarGuia6);
+        el.addEventListener('change', sincronizarGuia6);
     });
 
     guia6AtualizarEstadoAcordo();

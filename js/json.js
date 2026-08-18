@@ -198,8 +198,8 @@ function importarCaso(event) {
                 alert('O arquivo selecionado não corresponde a um caso previdenciário.');
                 return;
             }
-            if (!['3.1', '3.2', '3.3'].includes(dados.versao)) {
-                alert('Versão do arquivo não suportada. Versão esperada: 3.1, 3.2 ou 3.3');
+            if (!['3.1', '3.2', '3.3', '3.4'].includes(dados.versao)) {
+                alert('Versão do arquivo não suportada. Versões aceitas: 3.1, 3.2, 3.3 ou 3.4');
                 return;
             }
 
