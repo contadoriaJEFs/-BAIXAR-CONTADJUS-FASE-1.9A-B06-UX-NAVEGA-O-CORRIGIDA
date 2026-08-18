@@ -1,0 +1,629 @@
+/* ===== ESTILOS GERAIS ===== */
+@media print {
+    body { background: white; }
+    .no-print { display: none !important; }
+    .print-shadow { box-shadow: none !important; border: 1px solid #cbd5e1; }
+    .memoria-tabela th {
+        background: #f1f5f9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .memoria-tabela .row-piso {
+        background: #fef3c7 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .memoria-tabela .row-teto {
+        background: #fee2e2 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .memoria-tabela td, .memoria-tabela th {
+        white-space: nowrap !important;
+    }
+    .identificacao-bloco {
+        border: 1px solid #cbd5e1 !important;
+        background: #f8fafc !important;
+    }
+    .guia-container .conteudo-guia {
+        display: none !important;
+    }
+    .guia-container .conteudo-guia.ativo {
+        display: block !important;
+    }
+    .guia-container .nav-guia {
+        display: none !important;
+    }
+
+    /* ---- Correção para o relatório ---- */
+    .guia-container .conteudo-guia#guia-relatorios {
+        display: block !important;
+    }
+    #previewRelatorio {
+        max-height: none !important;
+        overflow: visible !important;
+        background: white !important;
+        border: none !important;
+        padding: 20px !important;
+        font-size: 0.8rem !important;
+    }
+    #previewRelatorio .relatorio-item {
+        border-bottom: 1px solid #ccc !important;
+        page-break-inside: avoid;
+    }
+    #resumoRelatorio {
+        display: none !important;
+    }
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+.status-normal { background: #dbeafe; color: #1e40af; }
+.status-piso { background: #fef3c7; color: #92400e; }
+.status-teto { background: #fee2e2; color: #991b1b; }
+.status-sm { background: #dbeafe; color: #1e40af; }
+
+.memoria-tabela th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f1f5f9;
+    border-bottom: 2px solid #cbd5e1;
+}
+.memoria-tabela .row-piso {
+    background-color: #fffbeb;
+}
+.memoria-tabela .row-teto {
+    background-color: #fef2f2;
+}
+.memoria-tabela .valor-final {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.resumo-executivo {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem 3rem;
+}
+.resumo-executivo .item {
+    display: flex;
+    flex-direction: column;
+}
+.resumo-executivo .rotulo {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+.resumo-executivo .valor {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.identificacao-bloco {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem 2rem;
+}
+.identificacao-bloco .item {
+    display: flex;
+    flex-direction: column;
+}
+.identificacao-bloco .rotulo {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+.identificacao-bloco .valor {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #0f172a;
+    word-break: break-word;
+}
+
+.tooltip-icon {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    background: #e2e8f0;
+    color: #475569;
+    border-radius: 9999px;
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1rem;
+    cursor: help;
+    margin-left: 0.25rem;
+    vertical-align: middle;
+}
+.tooltip-icon:hover {
+    background: #cbd5e1;
+}
+
+/* ===== SISTEMA DE GUIAS ===== */
+.guia-container .nav-guia {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+}
+.guia-container .nav-guia button {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.guia-container .nav-guia button:hover {
+    color: #1e293b;
+    border-bottom-color: #94a3b8;
+}
+.guia-container .nav-guia button.ativo {
+    color: #1e40af;
+    border-bottom-color: #2563eb;
+}
+.guia-container .conteudo-guia {
+    display: none;
+}
+.guia-container .conteudo-guia.ativo {
+    display: block;
+}
+
+/* ===== BENEFÍCIOS RECEBIDOS ===== */
+.beneficio-recebido-bloco {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+.beneficio-recebido-bloco .btn-remover {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: none;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+.beneficio-recebido-bloco .btn-remover:hover {
+    background: #fecaca;
+}
+
+/* ===== CADEADO ===== */
+.cadeado {
+    display: inline-block;
+    cursor: pointer;
+    font-size: 1.1rem;
+    margin-left: 0.25rem;
+    line-height: 1;
+    user-select: none;
+    background: transparent;
+    border: none;
+    padding: 0 0.1rem;
+}
+.cadeado.fechado { color: #64748b; }
+.cadeado.aberto { color: #2563eb; }
+.cadeado:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 640px) {
+    .guia-container .nav-guia button {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.75rem;
+    }
+    .resumo-executivo {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .identificacao-bloco {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===================================================================== */
+/* ===== GUIA 4 – DIFERENÇAS – ESTILOS VISUAIS ===== */
+/* ===================================================================== */
+
+.tabela-wrapper {
+    max-height: calc(100vh - 280px);
+    min-height: 300px;
+    overflow-y: auto;
+    overflow-x: auto;
+    position: relative;
+}
+
+#tabelaDiferencas thead {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    background: #cbd5e1;
+}
+#tabelaDiferencas thead th {
+    background: #cbd5e1;
+    border-bottom: 2px solid #94a3b8;
+}
+
+#tabelaDiferencas {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+#tabelaDiferencas thead th {
+    color: #0f172a;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
+    padding: 0.75rem 0.75rem;
+}
+
+#tabelaDiferencas tbody tr:nth-child(odd) {
+    background: #ffffff;
+}
+#tabelaDiferencas tbody tr:nth-child(even) {
+    background: #edf2f7;
+}
+#tabelaDiferencas tbody tr:hover {
+    background: #dbeafe !important;
+}
+#tabelaDiferencas tbody td {
+    border-bottom: 1px solid #d1d5db;
+    padding: 0.5rem 0.75rem;
+    vertical-align: middle;
+}
+
+#tabelaDiferencas .celula-editada {
+    background: #fef9c3 !important;
+}
+#tabelaDiferencas .celula-editada input {
+    background: #fef9c3 !important;
+}
+
+#tabelaDiferencas td input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0.2rem 0;
+    color: #0f172a;
+}
+#tabelaDiferencas td input:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: -2px;
+    border-radius: 2px;
+}
+
+#tabelaDiferencas .diff-positivo {
+    color: #16a34a;
+}
+#tabelaDiferencas .diff-negativo {
+    color: #dc2626;
+}
+#tabelaDiferencas .diff-zero {
+    color: #475569;
+}
+
+/* ===== BLOCO COMPETÊNCIAS MODIFICADAS ===== */
+#blocoCompetenciasModificadas {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+#listaCompModificadas .item-comp {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: white;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid #e2e8f0;
+    font-size: 0.8rem;
+}
+
+.btn-editar {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+.btn-editar:hover {
+    background: #bfdbfe;
+}
+
+.btn-restaurar {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+.btn-restaurar:hover {
+    background: #fecaca;
+}
+
+.btn-motivo {
+    background: #e2e8f0;
+    color: #475569;
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.btn-motivo:hover {
+    background: #cbd5e1;
+}
+.btn-motivo.tem-justificativa {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.btn-motivo.tem-justificativa::before {
+    content: "●";
+    font-size: 0.5rem;
+    color: #2563eb;
+}
+.btn-motivo.tem-justificativa-relatorio::after {
+    content: " 📄";
+    font-size: 0.65rem;
+}
+
+.linha-destaque {
+    background: #dbeafe !important;
+    border-left: 4px solid #2563eb;
+}
+
+/* ===== MODAL JUSTIFICATIVA ===== */
+.modal-overlay {
+    backdrop-filter: blur(2px);
+}
+
+#modalJustificativa textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+#modalJustificativa .flex-wrap {
+    gap: 0.5rem;
+}
+
+/* ===================================================================== */
+/* ===== RELATÓRIO DE ALTERAÇÕES MANUAIS (Fase 1.7C2) ===== */
+/* ===================================================================== */
+
+#previewRelatorio {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    background: #fafafa;
+}
+
+#previewRelatorio .relatorio-titulo {
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+#previewRelatorio .relatorio-separador {
+    border-top: 1px dashed #ccc;
+    margin: 1rem 0;
+}
+
+#previewRelatorio .relatorio-item {
+    margin-bottom: 1.2rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+#previewRelatorio .relatorio-item .campo {
+    font-weight: 600;
+}
+
+#previewRelatorio .relatorio-item .valor {
+    font-weight: 400;
+}
+
+#previewRelatorio .relatorio-item .status-interno {
+    color: #b45309;
+    background: #fef3c7;
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+#previewRelatorio .relatorio-item .status-externo {
+    color: #065f46;
+    background: #d1fae5;
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+#previewRelatorio .sem-justificativa {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* ===================================================================== */
+/* ===== RMI AUTOMÁTICA (readonly com fundo cinza) ===== */
+/* ===================================================================== */
+
+#rmi:read-only,
+.rmi-automatico {
+    background-color: #f1f5f9 !important;
+    color: #475569;
+}
+
+.rmi-info {
+    font-size: 0.7rem;
+    color: #64748b;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+/* ===================================================================== */
+/* ===== BENEFÍCIO BASEADO EM SALÁRIO MÍNIMO – ESTILOS ADICIONAIS ===== */
+/* ===================================================================== */
+
+.status-sm {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* ===================================================================== */
+/* ===== LINHA DE 13º SALÁRIO – APENAS TEXTO DESTACADO ===== */
+/* ===================================================================== */
+/* CORREÇÃO VISUAL: NÃO força fundo ou borda na linha inteira */
+/* A classe .linha-13 apenas aplica estilo à primeira célula (Competência) */
+.linha-13 td:first-child {
+    font-weight: 700;
+    color: #1e40af;
+}
+
+/* ===================================================================== */
+/* ===== GUIA 5 – TABELA DE DIFERENÇAS IMPORTADAS (Fase 1.8D) ===== */
+/* ===================================================================== */
+
+/* Zebra discreta */
+#corpoDiferencasAtualizacao tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+#corpoDiferencasAtualizacao tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+#corpoDiferencasAtualizacao tr:hover {
+    background-color: #f1f5f9 !important;
+}
+
+/* A classe .linha-13 na Guia 5 NÃO força fundo ou borda */
+#corpoDiferencasAtualizacao .linha-13 td:first-child {
+    font-weight: 700;
+    color: #1e40af;
+}
+
+#statusDiferencas {
+    white-space: pre-wrap;
+}
+
+#statusCorrecao, #statusJuros {
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 0.8rem;
+}
+
+
+/* ===================================================================== */
+/* ===== GUIA 6 – RENÚNCIA / FORMAÇÃO DA DEMANDA (Fase 1.9A) ===== */
+/* ===================================================================== */
+
+.resultado-renuncia-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+}
+
+.resultado-renuncia-item span {
+    color: #475569;
+    font-size: 0.8rem;
+}
+
+.resultado-renuncia-item strong {
+    color: #0f172a;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.resultado-renuncia-item.destaque {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.resultado-renuncia-item.destaque strong {
+    color: #1d4ed8;
+    font-size: 1rem;
+}
+
+#painelMemoriaAjuizamento table {
+    border-collapse: collapse;
+}
+
+#painelMemoriaAjuizamento th {
+    white-space: nowrap;
+}
+
+#painelMemoriaAjuizamento td {
+    white-space: nowrap;
+}
+
+#btnToggleMemoriaAjuizamento {
+    transition: background-color 0.15s ease;
+}
+
+#statusFormacaoDemanda {
+    white-space: pre-wrap;
+}
