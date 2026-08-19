@@ -2926,8 +2926,13 @@ function guia6CalcularFracaoRemanescente(dataAjuizamento) {
     var dia = parseInt(partes[0], 10);
     if (isNaN(dia) || dia < 1 || dia > 31) return 0;
 
-    // O projeto utiliza a convenção proporcional de 30 dias.
-    var diasRemanescentes = Math.max(0, 30 - dia);
+    // Convenção de mês comercial de 30 dias.
+    // A parcela vincenda começa no próprio dia do ajuizamento e inclui
+    // esse dia na contagem: dia 25 -> dias 25,26,27,28,29,30 = 6/30.
+    // Por isso, a fração remanescente é (31 - dia) / 30.
+    // A DIB é tratada separadamente na fração das vencidas e não altera
+    // o denominador da parte posterior ao ajuizamento.
+    var diasRemanescentes = Math.max(0, 31 - Math.min(dia, 30));
     return diasRemanescentes / 30;
 }
 
