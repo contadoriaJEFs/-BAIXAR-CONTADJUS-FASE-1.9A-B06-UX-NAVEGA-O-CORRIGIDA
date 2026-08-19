@@ -149,6 +149,28 @@ document.addEventListener('DOMContentLoaded', function() {
         el.addEventListener('change', agendarRecalculoGlobal);
     });
 
+    // Data do ajuizamento é um único dado lógico exibido em dois pontos da UI.
+    // Alterar um campo atualiza imediatamente o outro, sem navegar de guia.
+    var dataAjuizamentoEntrada = document.getElementById('dataAjuizamento');
+    var dataAjuizamentoGuia6 = document.getElementById('dataAjuizamentoGuia6');
+    if (dataAjuizamentoEntrada && typeof guia6SincronizarDataAjuizamento === 'function') {
+        guia6SincronizarDataAjuizamento(dataAjuizamentoEntrada);
+    }
+    if (dataAjuizamentoEntrada && dataAjuizamentoGuia6) {
+        dataAjuizamentoEntrada.addEventListener('input', function() {
+            guia6SincronizarDataAjuizamento(dataAjuizamentoEntrada);
+        });
+        dataAjuizamentoEntrada.addEventListener('change', function() {
+            guia6SincronizarDataAjuizamento(dataAjuizamentoEntrada);
+        });
+        dataAjuizamentoGuia6.addEventListener('input', function() {
+            guia6SincronizarDataAjuizamento(dataAjuizamentoGuia6);
+        });
+        dataAjuizamentoGuia6.addEventListener('change', function() {
+            guia6SincronizarDataAjuizamento(dataAjuizamentoGuia6);
+        });
+    }
+
     // Inicializar Guia 4
     if (typeof initGuiaDiferencas === 'function') {
         initGuiaDiferencas();
@@ -743,7 +765,8 @@ function mostrarErro(mensagem) {
 // =====================================================================
 // FUNÇÕES DE CÁLCULO (executarCalculo, exibirResultado, etc.)
 // =====================================================================
-function executarCalculo() {
+function executarCalculo(opcoes) {
+    opcoes = opcoes || {};
     if (document.getElementById('tipoAcao').value !== 'previdenciaria') {
         mostrarErro('O cálculo de evolução está disponível apenas para "Ações Previdenciárias".');
         return;
@@ -772,7 +795,7 @@ function executarCalculo() {
         };
 
         const resultado = calcularEvolucao(parametros);
-        exibirResultado(resultado, parametros);
+        exibirResultado(resultado, parametros, opcoes);
 
     } catch (erro) {
         mostrarErro('Erro: ' + erro.message);
@@ -780,7 +803,8 @@ function executarCalculo() {
     }
 }
 
-function exibirResultado(resultado, parametros) {
+function exibirResultado(resultado, parametros, opcoes) {
+    opcoes = opcoes || {};
     const { memoria, rmaFinal, statusFinal, qtdReajustes, ultimoReajuste, ultimoIndice } = resultado;
 
     window.memoriaEvolucaoDevida = memoria;
@@ -893,9 +917,13 @@ function exibirResultado(resultado, parametros) {
         msgSemCalculo.classList.add('hidden');
         msgSemCalculo.style.display = 'none';
     }
-    ativarGuia('evolucao-devida');
-    if (painelResultado) {
-        painelResultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Recalculos automáticos atualizam os dados sem tirar o usuário da guia
+    // que ele está visualizando. A navegação só ocorre no cálculo manual.
+    if (!opcoes.silencioso) {
+        ativarGuia('evolucao-devida');
+        if (painelResultado) {
+            painelResultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 }
 

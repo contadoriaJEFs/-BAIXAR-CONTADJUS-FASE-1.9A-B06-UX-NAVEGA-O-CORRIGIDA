@@ -30,13 +30,13 @@
 
             <!-- Navegação das guias -->
             <nav class="nav-guia no-print" id="navGuias">
-                <button class="ativo" data-guia="entradas">1. Entradas</button>
-                <button data-guia="evolucao-devida">2. Evolução Devida</button>
-                <button data-guia="beneficios-recebidos">3. Benefícios Recebidos</button>
-                <button data-guia="diferencas">4. Diferenças</button>
-                <button data-guia="atualizacao">5. Atualização</button>
-                <button data-guia="renuncia">6. Renúncia</button>
-                <button data-guia="relatorios">7. Relatórios</button>
+                <button type="button" class="ativo" data-guia="entradas">1. Entradas</button>
+                <button type="button" data-guia="evolucao-devida">2. Evolução Devida</button>
+                <button type="button" data-guia="beneficios-recebidos">3. Benefícios Recebidos</button>
+                <button type="button" data-guia="diferencas">4. Diferenças</button>
+                <button type="button" data-guia="atualizacao">5. Atualização</button>
+                <button type="button" data-guia="renuncia">6. Renúncia</button>
+                <button type="button" data-guia="relatorios">7. Relatórios</button>
             </nav>
 
             <!-- ============================================================ -->
@@ -462,7 +462,7 @@
                         <label class="ml-4"><input type="radio" name="modoCompensacao" value="negativo"> Permitir diferença negativa</label>
                     </div>
                     <div>
-                        <button id="btnTemaSTJ" class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded text-xs font-semibold hover:bg-indigo-200 transition">Tema 1027 STJ</button>
+                        <button type="button" id="btnTemaSTJ" class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded text-xs font-semibold hover:bg-indigo-200 transition">Tema 1027 STJ</button>
                     </div>
                 </div>
 
@@ -481,7 +481,7 @@
                         <h4 class="text-sm font-bold text-slate-700">
                             Competências Modificadas (<span id="qtdCompModificadas">0</span>)
                         </h4>
-                        <button id="btnRestaurarTodas" 
+                        <button type="button" id="btnRestaurarTodas" 
                                 class="px-3 py-1 bg-red-200 text-red-800 rounded text-xs font-semibold hover:bg-red-300 transition">
                             Restaurar Todas
                         </button>
@@ -549,7 +549,7 @@
                             <option value="MC-PREVID-2022">MC-PREVID-2022</option>
                             <option value="MC-ACOES-GERAL-2022">MC-ACOES-GERAL-2022</option>
                         </select>
-                        <button id="btnAplicarModelo" class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition">Aplicar</button>
+                        <button type="button" id="btnAplicarModelo" class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition">Aplicar</button>
                     </div>
                 </div>
 
@@ -561,7 +561,7 @@
                     </div>
                     <div id="correcaoContent" class="accordion-content hidden p-2">
                         <div class="flex flex-col md:flex-row md:items-start gap-3">
-                            <button id="btnCarregarCorrecao" class="w-full md:w-56 shrink-0 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-semibold shadow transition">
+                            <button type="button" id="btnCarregarCorrecao" class="w-full md:w-56 shrink-0 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-semibold shadow transition">
                                 Carregar Parâmetros de Correção
                             </button>
                             <input type="file" id="fileInputCorrecao" accept=".corr,.json,application/json" class="hidden">
@@ -578,7 +578,7 @@
                     </div>
                     <div id="jurosContent" class="accordion-content hidden p-2">
                         <div class="flex flex-col md:flex-row md:items-start gap-3">
-                            <button id="btnCarregarJurosSelic" class="w-full md:w-56 shrink-0 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-semibold shadow transition">
+                            <button type="button" id="btnCarregarJurosSelic" class="w-full md:w-56 shrink-0 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-semibold shadow transition">
                                 Carregar Parâmetros de Juros e SELIC
                             </button>
                             <input type="file" id="fileInputJurosSelic" accept=".jur,.json,application/json" class="hidden">
@@ -592,14 +592,14 @@
                     <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">📊 Diferenças da Guia 4</h4>
 
                     <div class="flex flex-wrap items-center gap-3">
-                        <button id="btnImportarDiferencas" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-sm font-semibold shadow transition">
+                        <button type="button" id="btnImportarDiferencas" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-sm font-semibold shadow transition">
                             Importar Diferenças da Guia 4
                         </button>
                         <span id="statusDiferencas" class="text-sm text-slate-500">Nenhuma diferença importada.</span>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3 mt-3">
-                        <button id="btnCalcularAtualizacao"
+                        <button type="button" id="btnCalcularAtualizacao"
                                 type="button"
                                 class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm font-semibold shadow transition">
                             Calcular Atualização
@@ -707,23 +707,23 @@
 
                         <div id="painelMemoriaAjuizamento" class="hidden p-4 bg-white">
                             <div id="resumoAjuizamentoMemoria" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                                <div class="p-3 bg-slate-50 rounded border">
+                                <div class="p-3 bg-slate-50 rounded">
                                     <div class="text-xs text-slate-500">Original</div>
                                     <strong id="totalOriginalAjuizamento">R$ 0,00</strong>
                                 </div>
-                                <div class="p-3 bg-slate-50 rounded border">
+                                <div class="p-3 bg-slate-50 rounded">
                                     <div class="text-xs text-slate-500">Corrigido</div>
                                     <strong id="totalCorrigidoAjuizamento">R$ 0,00</strong>
                                 </div>
-                                <div class="p-3 bg-slate-50 rounded border">
+                                <div class="p-3 bg-slate-50 rounded">
                                     <div class="text-xs text-slate-500">Juros</div>
                                     <strong id="totalJurosAjuizamento">R$ 0,00</strong>
                                 </div>
-                                <div class="p-3 bg-slate-50 rounded border">
+                                <div class="p-3 bg-slate-50 rounded">
                                     <div class="text-xs text-slate-500">SELIC</div>
                                     <strong id="totalSelicAjuizamento">R$ 0,00</strong>
                                 </div>
-                                <div class="p-3 bg-blue-50 rounded border border-blue-100">
+                                <div class="p-3 bg-blue-50 rounded">
                                     <div class="text-xs text-slate-500">Total atualizado</div>
                                     <strong id="totalAtualizadoAjuizamento">R$ 0,00</strong>
                                 </div>
@@ -748,35 +748,37 @@
                         </div>
                     </div>
 
-                    <!-- FORMAÇÃO DA DEMANDA -->
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">🧮 Formação da Demanda</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div class="resultado-renuncia-item">
-                                <span>Parcela do ajuizamento</span>
-                                <strong id="valorParcelaAjuizamento">R$ 0,00</strong>
-                            </div>
-                            <div class="resultado-renuncia-item">
-                                <span>Vencidas até o ajuizamento</span>
-                                <strong id="valorVencidasAjuizamento">R$ 0,00</strong>
-                            </div>
-                            <div class="resultado-renuncia-item">
-                                <span>Vincendas</span>
-                                <strong id="valorVincendasAjuizamento">R$ 0,00</strong>
-                            </div>
-                            <div class="resultado-renuncia-item destaque">
-                                <span>Demanda no ajuizamento</span>
-                                <strong id="valorDemandaAjuizamento">R$ 0,00</strong>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- PARCELAS VINCENDAS -->
                     <div id="painelParcelasVincendas" class="bg-white p-4 rounded-lg border border-slate-200 hidden">
-                        <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center justify-between mb-3">
                             <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider">📊 Parcelas Vincendas</h3>
                             <div class="text-sm text-slate-600">
                                 <span id="quantidadeParcelasVincendasUI">0</span> parcela(s)
+                            </div>
+                        </div>
+
+                        <!-- Totalizador das vincendas: mesma linguagem visual das vencidas,
+                             sempre acima da tabela/composição. -->
+                        <div id="resumoParcelasVincendas" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                            <div class="p-3 bg-slate-50 rounded">
+                                <div class="text-xs text-slate-500">Original</div>
+                                <strong id="totalOriginalParcelasVincendas">R$ 0,00</strong>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded">
+                                <div class="text-xs text-slate-500">Corrigido</div>
+                                <strong id="totalCorrigidoParcelasVincendas">R$ 0,00</strong>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded">
+                                <div class="text-xs text-slate-500">Juros</div>
+                                <strong id="totalJurosParcelasVincendas">R$ 0,00</strong>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded">
+                                <div class="text-xs text-slate-500">SELIC</div>
+                                <strong id="totalSelicParcelasVincendas">R$ 0,00</strong>
+                            </div>
+                            <div class="p-3 bg-blue-50 rounded">
+                                <div class="text-xs text-slate-500">Total</div>
+                                <strong id="totalParcelasVincendas">R$ 0,00</strong>
                             </div>
                         </div>
 
@@ -813,10 +815,28 @@
                             </table>
                         </div>
 
-                        <div class="mt-3 flex justify-end">
-                            <div class="min-w-[280px] rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-right">
-                                <div class="text-xs font-semibold uppercase tracking-wide text-blue-700">Total das parcelas vincendas</div>
-                                <div id="totalParcelasVincendas" class="mt-1 text-lg font-extrabold text-blue-900">R$ 0,00</div>
+                    </div>
+
+
+                    <!-- FORMAÇÃO DA DEMANDA -->
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">🧮 Formação da Demanda</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="resultado-renuncia-item">
+                                <span>Parcela do ajuizamento</span>
+                                <strong id="valorParcelaAjuizamento">R$ 0,00</strong>
+                            </div>
+                            <div class="resultado-renuncia-item">
+                                <span>Vencidas até o ajuizamento</span>
+                                <strong id="valorVencidasAjuizamento">R$ 0,00</strong>
+                            </div>
+                            <div class="resultado-renuncia-item">
+                                <span>Vincendas</span>
+                                <strong id="valorVincendasAjuizamento">R$ 0,00</strong>
+                            </div>
+                            <div class="resultado-renuncia-item destaque">
+                                <span>Demanda no ajuizamento</span>
+                                <strong id="valorDemandaAjuizamento">R$ 0,00</strong>
                             </div>
                         </div>
                     </div>

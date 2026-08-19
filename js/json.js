@@ -221,6 +221,9 @@ function importarCaso(event) {
             onTipoAcaoChange();
 
             document.getElementById('dataAjuizamento').value = datas.ajuizamento || '';
+            if (typeof guia6SincronizarDataAjuizamento === 'function') {
+                guia6SincronizarDataAjuizamento(document.getElementById('dataAjuizamento'));
+            }
             document.getElementById('dataAtualizacao').value = datas.atualizacao || '';
             document.getElementById('inicioJuros').value = datas.inicioJuros || '';
 

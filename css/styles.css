@@ -627,3 +627,23 @@
 #statusFormacaoDemanda {
     white-space: pre-wrap;
 }
+
+/* ===== GUIA 6 — TOTALIZADORES UNIFICADOS ===== */
+#resumoAjuizamentoMemoria > div,
+#resumoParcelasVincendas > div {
+    border: 0 !important;
+    box-shadow: none !important;
+}
+#resumoAjuizamentoMemoria strong,
+#resumoParcelasVincendas strong {
+    font-size: 0.98rem;
+    color: #0f172a;
+}
+#resumoAjuizamentoMemoria > div:last-child strong,
+#resumoParcelasVincendas > div:last-child strong {
+    color: #1d4ed8;
+    font-size: 1.05rem;
+}
+#painelParcelasVincendas table tbody tr:last-child td {
+    font-weight: 700;
+}

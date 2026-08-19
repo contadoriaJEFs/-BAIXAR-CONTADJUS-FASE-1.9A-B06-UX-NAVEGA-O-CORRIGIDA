@@ -2810,13 +2810,23 @@ function guia6SincronizarDataAjuizamento(origem) {
     var guia6 = document.getElementById('dataAjuizamentoGuia6');
     if (!entrada || !guia6) return;
 
-    var valor = String(origem && origem.value !== undefined ? origem.value : entrada.value || guia6.value || '').trim();
-    if (origem !== entrada && origem !== guia6) {
-        valor = entrada.value.trim() || guia6.value.trim();
+    var valorEntrada = String(entrada.value || '').trim();
+    var valorGuia6 = String(guia6.value || '').trim();
+    var valor = String(origem && origem.value !== undefined ? origem.value : '').trim();
+
+    // Sem origem explícita, a Entrada é a fonte inicial. Se ela estiver vazia,
+    // preservamos o valor que já existir na Guia 6.
+    if (!valor) {
+        valor = valorEntrada || valorGuia6;
     }
 
     if (entrada.value !== valor) entrada.value = valor;
     if (guia6.value !== valor) guia6.value = valor;
+
+    // Mantém o objeto global atualizado imediatamente, sem trocar de guia.
+    if (typeof guia6ColetarParametrosFormacaoDemanda === 'function') {
+        guia6ColetarParametrosFormacaoDemanda();
+    }
 }
 
 function guia6ObterCompetenciaAjuizamentoISO() {
@@ -3709,7 +3719,16 @@ function renderizarParcelasVincendas() {
     if (!resultado || !container) return;
     container.classList.remove('hidden');
 
-    if (totalEl) totalEl.textContent = formatarMoedaAtualizacao(resultado.valorVincendas);
+    var valorVincendas = Number(resultado.valorVincendas) || 0;
+    if (totalEl) totalEl.textContent = formatarMoedaAtualizacao(valorVincendas);
+    var originalVincendasEl = document.getElementById('totalOriginalParcelasVincendas');
+    var corrigidoVincendasEl = document.getElementById('totalCorrigidoParcelasVincendas');
+    var jurosVincendasEl = document.getElementById('totalJurosParcelasVincendas');
+    var selicVincendasEl = document.getElementById('totalSelicParcelasVincendas');
+    if (originalVincendasEl) originalVincendasEl.textContent = formatarMoedaAtualizacao(valorVincendas);
+    if (corrigidoVincendasEl) corrigidoVincendasEl.textContent = formatarMoedaAtualizacao(valorVincendas);
+    if (jurosVincendasEl) jurosVincendasEl.textContent = formatarMoedaAtualizacao(0);
+    if (selicVincendasEl) selicVincendasEl.textContent = formatarMoedaAtualizacao(0);
     if (quantidadeEl) quantidadeEl.textContent = String(resultado.quantidadeParcelasVincendas || 0);
 
     var metodo = window.parametrosFormacaoDemanda && window.parametrosFormacaoDemanda.metodoVincendas;
@@ -3915,7 +3934,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     guia6AtualizarEstadoAcordo();
-    guia6SincronizarDataAjuizamento();
+    guia6SincronizarDataAjuizamento(document.getElementById('dataAjuizamento'));
 
     document.addEventListener('keydown', function(e) {
         var tag = e.target.tagName;
