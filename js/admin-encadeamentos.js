@@ -3401,17 +3401,14 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
             // efetivamente devida desde a DIB. Nesse caso, a parte
             // vincenda deve ser retirada dessa mesma competência ativa,
             // e não da mensalidade integral.
-            var fracaoVincendaMesDibAnual = guia6ObterFracaoVincendaMesDibAjuizamento(dataAjuizamento);
+            // A primeira vincenda é a parte do mês comercial posterior ao ajuizamento.
+            // Mesmo quando DIB e ajuizamento estão na mesma competência, a fração
+            // deve ser calculada sobre os 30 dias do mês comercial, e NÃO sobre
+            // os dias existentes entre a DIB e o fim do mês.
+            // Ex.: ajuizamento em 25/08 -> 6/30 da base.
+            var fracaoVincendaMesDibAnual = guia6CalcularFracaoRemanescente(dataAjuizamento);
             if (fracaoVincendaMesDibAnual !== null) {
-                var valorCompetenciaAtivaAnual = Number(parcelaAjuizamento) || 0;
-                try {
-                    valorCompetenciaAtivaAnual = Number(
-                        guia6ObterValorEvolucaoNaCompetencia(competenciaAjuizamentoISO).valor
-                    ) || valorCompetenciaAtivaAnual;
-                } catch (eAnual) {
-                    // Mantém a base integral como fallback.
-                }
-                baseAnual = valorCompetenciaAtivaAnual * fracaoVincendaMesDibAnual;
+                baseAnual = (Number(parcelaAjuizamento) || 0) * fracaoVincendaMesDibAnual;
             } else {
                 baseAnual = baseAnual * guia6CalcularFracaoRemanescente(dataAjuizamento);
             }
@@ -3481,11 +3478,12 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
             // ao ajuizamento. Quando DIB e ajuizamento estão na mesma
             // competência, a fração deve ser calculada sobre a parte da
             // competência que efetivamente existe desde a DIB.
-            var fracaoVincendaMesDib = guia6ObterFracaoVincendaMesDibAjuizamento(dataAjuizamento);
+            // A evolução fornece o valor mensal integral. A primeira
+            // vincenda ocupa os dias do ajuizamento até o fim do mês
+            // comercial de 30 dias. A DIB não deve mudar o denominador: ela
+            // já foi considerada na composição das vencidas.
+            var fracaoVincendaMesDib = guia6CalcularFracaoRemanescente(dataAjuizamento);
             if (fracaoVincendaMesDib !== null) {
-                // A evolução já limita o valor da competência à parcela
-                // efetivamente devida desde a DIB. Repartimos essa própria
-                // competência entre vencida e vincenda.
                 valorMensal = (Number(valorMensalIntegral) || 0) * fracaoVincendaMesDib;
             } else {
                 valorMensal = (Number(parcelaAjuizamento) || 0) *
