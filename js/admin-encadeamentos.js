@@ -2975,9 +2975,16 @@ function guia6ObterFracaoVencidaMesDibAjuizamento(dataAjuizamento) {
 }
 
 function guia6ObterFracaoVincendaMesDibAjuizamento(dataAjuizamento) {
-    var fracaoVencida = guia6ObterFracaoVencidaMesDibAjuizamento(dataAjuizamento);
-    if (fracaoVencida === null) return null;
-    return Math.max(0, 1 - fracaoVencida);
+    var partes = String(dataAjuizamento || '').split('/');
+    var diaAju = parseInt(partes[0], 10);
+    if (isNaN(diaAju) || diaAju < 1 || diaAju > 30) return null;
+
+    // A parte vincenda do mês do ajuizamento é calculada diretamente
+    // sobre os 30 dias da competência comercial.
+    // Ex.: ajuizamento em 25/08 -> dias 25 a 30 = 6/30.
+    // A DIB já foi considerada na parcela vencida e não deve alterar
+    // o denominador da parcela posterior ao ajuizamento.
+    return Math.max(0, 30 - diaAju) / 30;
 }
 
 function calcularAtualizacaoAteAjuizamento() {
