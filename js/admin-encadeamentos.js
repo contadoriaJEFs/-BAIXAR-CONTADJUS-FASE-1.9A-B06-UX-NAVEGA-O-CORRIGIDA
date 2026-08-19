@@ -3717,8 +3717,8 @@ function calcularFormacaoDemanda() {
         renderizarFormacaoDemanda();
 
         if (status) {
-            status.textContent = '✅ Formação da demanda calculada com sucesso.';
-            status.className = 'text-sm text-green-700';
+            status.textContent = '✓ Cálculo atualizado automaticamente.';
+            status.className = 'text-xs text-green-700';
         }
 
         return window.resultadoAjuizamento;
@@ -3921,8 +3921,8 @@ function guia6InvalidarResultado() {
 
     var status = document.getElementById('statusFormacaoDemanda');
     if (status) {
-        status.textContent = '⚠️ Parâmetros alterados. Recalcule a Formação da Demanda.';
-        status.className = 'text-sm text-amber-700';
+        status.textContent = '⟳ Parâmetros alterados. Atualização automática em andamento.';
+        status.className = 'text-xs text-slate-500';
     }
 }
 
@@ -3944,27 +3944,33 @@ window.renderizarParcelasVincendas = renderizarParcelasVincendas;
 document.addEventListener('DOMContentLoaded', function() {
     criarModalAdmin();
 
-    // Fase 1.9A – listeners da Guia 6
-    var btnFormacao = document.getElementById('btnCalcularFormacaoDemanda');
-    if (btnFormacao) {
-        btnFormacao.addEventListener('click', function() {
-            calcularFormacaoDemanda();
+    // Fase 1.9A – cálculo da Guia 6 ocorre automaticamente.
+
+    var btnTutorial = document.getElementById('btnAbrirTutorialFormacaoDemanda');
+    var modalTutorial = document.getElementById('modalTutorialFormacaoDemanda');
+    var btnFecharTutorial = document.getElementById('btnFecharTutorialFormacaoDemanda');
+
+    function abrirTutorialFormacaoDemanda() {
+        if (modalTutorial) modalTutorial.classList.remove('hidden');
+    }
+
+    function fecharTutorialFormacaoDemanda() {
+        if (modalTutorial) modalTutorial.classList.add('hidden');
+    }
+
+    if (btnTutorial) btnTutorial.addEventListener('click', abrirTutorialFormacaoDemanda);
+    if (btnFecharTutorial) btnFecharTutorial.addEventListener('click', fecharTutorialFormacaoDemanda);
+    if (modalTutorial) {
+        modalTutorial.addEventListener('click', function(e) {
+            if (e.target === modalTutorial) fecharTutorialFormacaoDemanda();
         });
     }
 
-    var btnTutorial = document.getElementById('btnToggleTutorialFormacaoDemanda');
-    if (btnTutorial) {
-        btnTutorial.addEventListener('click', function() {
-            var conteudo = document.getElementById('conteudoTutorialFormacaoDemanda');
-            var statusTutorial = document.getElementById('statusTutorialFormacaoDemanda');
-            var setaTutorial = document.getElementById('setaTutorialFormacaoDemanda');
-            var aberto = conteudo && !conteudo.classList.contains('hidden');
-
-            if (conteudo) conteudo.classList.toggle('hidden', aberto);
-            if (statusTutorial) statusTutorial.textContent = aberto ? 'Fechado' : 'Aberto';
-            if (setaTutorial) setaTutorial.textContent = aberto ? '▶' : '▼';
-        });
-    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modalTutorial && !modalTutorial.classList.contains('hidden')) {
+            fecharTutorialFormacaoDemanda();
+        }
+    });
 
     var btnMemoria = document.getElementById('btnToggleMemoriaAjuizamento');
     if (btnMemoria) {
@@ -3975,6 +3981,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (painel) painel.classList.toggle('hidden', aberto);
             if (statusMemoria) statusMemoria.textContent = aberto ? 'Fechado' : 'Aberto';
+            var setaMemoria = document.getElementById('setaMemoriaAjuizamento');
+            if (setaMemoria) setaMemoria.textContent = aberto ? '▶' : '▼';
         });
     }
 

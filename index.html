@@ -689,18 +689,19 @@
                         </div>
 
                         <div class="mt-4 flex flex-wrap items-center gap-3">
-                            <button id="btnCalcularFormacaoDemanda" type="button" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-semibold shadow">
-                                Calcular Formação da Demanda
+                            <button id="btnAbrirTutorialFormacaoDemanda" type="button"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 bg-white text-slate-600 rounded-md hover:bg-slate-50 hover:text-slate-800 text-xs font-medium transition">
+                                ⓘ Regras utilizadas
                             </button>
-                            <span id="statusFormacaoDemanda" class="text-sm text-slate-500"></span>
+                            <span id="statusFormacaoDemanda" class="text-xs text-slate-500"></span>
                         </div>
                     </div>
 
                     <!-- VALORES ATÉ O AJUIZAMENTO -->
-                    <div class="border border-slate-200 rounded-lg overflow-hidden">
+                    <div class="border border-green-100 rounded-lg overflow-hidden bg-green-50/20">
                         <button id="btnToggleMemoriaAjuizamento" type="button"
-                                class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 text-left">
-                            <span class="font-semibold text-slate-700">▼ Valores até o Ajuizamento (Vencidas)</span>
+                                class="w-full flex items-center justify-between px-4 py-3 bg-green-50/50 hover:bg-green-50/70 text-left">
+                            <span class="font-semibold text-slate-700"><span id="setaMemoriaAjuizamento" class="inline-block w-5 text-slate-600">▶</span>Valores até o Ajuizamento (Vencidas)</span>
                             <span id="statusMemoriaAjuizamento" class="text-xs text-slate-500">Fechado</span>
                         </button>
 
@@ -747,44 +748,11 @@
                         </div>
                     </div>
 
-                    <!-- TUTORIAL – REGRAS DA FORMAÇÃO DA DEMANDA -->
-                    <div id="tutorialFormacaoDemanda" class="mb-4 border border-amber-200 rounded-lg overflow-hidden bg-amber-50/40">
-                        <button id="btnToggleTutorialFormacaoDemanda" type="button"
-                                class="w-full flex items-center justify-between px-4 py-3 bg-amber-50/70 hover:bg-amber-100/60 text-left">
-                            <span class="font-semibold text-slate-700"><span id="setaTutorialFormacaoDemanda" class="inline-block w-5 text-slate-600">▶</span>Tutorial — Regras da Formação da Demanda</span>
-                            <span id="statusTutorialFormacaoDemanda" class="text-xs text-slate-500">Fechado</span>
-                        </button>
-                        <div id="conteudoTutorialFormacaoDemanda" class="hidden p-4 bg-amber-50/20">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-700">
-                                <div>
-                                    <h4 class="font-semibold text-slate-800 mb-1">1 Parcela anual</h4>
-                                    <p>Considera 12 parcelas, independentemente da quantidade de competências existentes. Usa a parcela-base vigente no ajuizamento. Não acrescenta 13º.</p>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-slate-800 mb-1">Até 12 vincendas</h4>
-                                    <p>Soma as parcelas efetivamente existentes após o ajuizamento, respeitando o valor de cada competência, até o limite de 12 parcelas. O 13º só entra quando a opção estiver marcada.</p>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-slate-800 mb-1">Mês do ajuizamento</h4>
-                                    <p>Integral: considera a parcela-base completa. Proporcional: considera os dias restantes do mês, incluindo o próprio dia do ajuizamento.</p>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-slate-800 mb-1">Não considerar vincendas</h4>
-                                    <p>As parcelas vincendas são zeradas e não integram a formação da demanda.</p>
-                                </div>
-                                <div class="md:col-span-2 pt-3 border-t border-amber-200">
-                                    <h4 class="font-semibold text-slate-800 mb-1">Composição final</h4>
-                                    <p>A demanda no ajuizamento corresponde às vencidas atualizadas somadas às vincendas. A parcela do ajuizamento não é adicionada novamente quando já estiver incluída no bloco de vincendas.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- PARCELAS VINCENDAS -->
-                    <div id="painelParcelasVincendas" class="border border-amber-200 rounded-lg overflow-hidden hidden bg-amber-50/30">
+                    <div id="painelParcelasVincendas" class="border border-green-200 rounded-lg overflow-hidden hidden bg-green-50/40">
                         <button id="btnToggleParcelasVincendas" type="button"
-                                class="w-full flex items-center justify-between px-4 py-3 bg-amber-50/70 hover:bg-amber-100/60 text-left">
-                            <span class="font-semibold text-slate-700"><span id="setaParcelasVincendas" class="inline-block w-5 text-slate-600">▼</span>Parcelas vincendas</span>
+                                class="w-full flex items-center justify-between px-4 py-3 bg-green-50/80 hover:bg-green-100/70 text-left">
+                            <span class="font-semibold text-slate-700"><span id="setaParcelasVincendas" class="inline-block w-5 text-slate-600">▶</span>Parcelas vincendas</span>
                             <span class="flex items-center gap-3 text-xs text-slate-500">
                                 <span id="quantidadeParcelasVincendasUI">0</span> parcela(s)
                                 <span id="statusParcelasVincendas">Fechado</span>
@@ -1032,6 +1000,45 @@
     </div>
 
     <!-- ============================================================ -->
+    <!-- ============================================================ -->
+    <!-- MODAL – REGRAS DA FORMAÇÃO DA DEMANDA                     -->
+    <!-- ============================================================ -->
+    <div id="modalTutorialFormacaoDemanda" class="fixed inset-0 bg-black/40 flex items-center justify-center hidden z-50 modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tituloModalTutorialFormacaoDemanda">
+        <div class="bg-white rounded-xl max-w-2xl w-full mx-4 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+                <div>
+                    <h3 id="tituloModalTutorialFormacaoDemanda" class="text-base font-bold text-slate-800">Regras da Formação da Demanda</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Critérios utilizados pelo cálculo automático da Guia 6.</p>
+                </div>
+                <button id="btnFecharTutorialFormacaoDemanda" type="button" class="h-8 w-8 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 text-lg" aria-label="Fechar">×</button>
+            </div>
+            <div class="p-5 max-h-[70vh] overflow-y-auto text-sm text-slate-700">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-semibold text-slate-800 mb-1">1 Parcela anual</h4>
+                        <p>Considera 12 parcelas, independentemente da quantidade de competências existentes. Usa a parcela-base vigente no ajuizamento. Não acrescenta 13º.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-slate-800 mb-1">Até 12 vincendas</h4>
+                        <p>Soma as parcelas efetivamente existentes após o ajuizamento, respeitando o valor de cada competência, até o limite de 12 parcelas. O 13º só entra quando a opção estiver marcada.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-slate-800 mb-1">Mês do ajuizamento</h4>
+                        <p>Integral: considera a parcela-base completa. Proporcional: considera os dias restantes do mês, incluindo o próprio dia do ajuizamento.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-slate-800 mb-1">Não considerar vincendas</h4>
+                        <p>As parcelas vincendas são zeradas e não integram a formação da demanda.</p>
+                    </div>
+                    <div class="md:col-span-2 pt-3 border-t border-slate-200">
+                        <h4 class="font-semibold text-slate-800 mb-1">Composição final</h4>
+                        <p>A demanda no ajuizamento corresponde às vencidas atualizadas somadas às vincendas. A parcela do ajuizamento não é adicionada novamente quando já estiver incluída no bloco de vincendas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL JUSTIFICATIVA (Fase 1.7C1)                              -->
     <!-- ============================================================ -->
     <div id="modalJustificativa" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50 modal-overlay">
