@@ -3356,8 +3356,10 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
             ? guia6CalcularFracaoRemanescente(dataAjuizamento) * 100
             : 100;
 
+        var totalAnual = valorPrimeiraParcela + (valorDemaisParcelas * 11);
+
         return {
-            valor: baseAnual * 12,
+            valor: totalAnual,
             parcelas: [],
             quantidadeParcelas: 12,
             metodo: metodo,

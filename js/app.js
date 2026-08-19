@@ -121,6 +121,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // DIB: durante a digitação, o recálculo automático permanece silencioso.
+    // Ao sair do campo, valida a entrada completa sem navegar para outra guia
+    // nem deslocar a tela até o painel de erro.
+    const dibInputValidacao = document.getElementById('dib');
+    if (dibInputValidacao) {
+        dibInputValidacao.addEventListener('blur', function() {
+            const valor = this.value.trim();
+            if (!valor) return;
+            const atual = document.activeElement;
+            setTimeout(function() {
+                try {
+                    executarCalculo({ silencioso: false, semScrollErro: true, preservarGuia: true });
+                } catch (e) {
+                    console.debug('[VALIDACAO DIB]', e.message || e);
+                }
+            }, 0);
+        });
+    }
+
     // Sincronização Data de Atualização → Data Final
     const dataFinal = document.getElementById('dataFinal');
     if (dataFinal) {
@@ -746,14 +765,20 @@ function limparFormulario() {
     atualizarEstadoBaseadoSalarioMinimo();
 }
 
-function mostrarErro(mensagem) {
+function mostrarErro(mensagem, opcoes) {
+    opcoes = opcoes || {};
     const painelErro = document.getElementById('painelErro');
     const msgErro = document.getElementById('mensagemErro');
     if (painelErro && msgErro) {
         msgErro.innerHTML = mensagem;
         painelErro.classList.remove('hidden');
-        painelErro.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
+        // Validações disparadas pelo blur/input não devem retirar o campo
+        // que o usuário acabou de editar da área visível. O scroll só ocorre
+        // quando solicitado explicitamente.
+        if (!opcoes.semScroll) {
+            painelErro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    } else if (!opcoes.silencioso) {
         alert(mensagem);
     }
     const painelResultado = document.getElementById('painelResultado');
@@ -768,7 +793,7 @@ function mostrarErro(mensagem) {
 function executarCalculo(opcoes) {
     opcoes = opcoes || {};
     if (document.getElementById('tipoAcao').value !== 'previdenciaria') {
-        mostrarErro('O cálculo de evolução está disponível apenas para "Ações Previdenciárias".');
+        if (!opcoes.silencioso) mostrarErro('O cálculo de evolução está disponível apenas para "Ações Previdenciárias".', { semScroll: !!opcoes.semScrollErro });
         return;
     }
 
@@ -776,7 +801,7 @@ function executarCalculo(opcoes) {
     if (painelErro) painelErro.classList.add('hidden');
 
     if (fonteIndices === 'externa' && indicesAtivos === BASE_INTERNA) {
-        mostrarErro("Você selecionou 'Arquivo Externo', mas nenhum arquivo foi carregado.");
+        if (!opcoes.silencioso) mostrarErro("Você selecionou 'Arquivo Externo', mas nenhum arquivo foi carregado.", { semScroll: !!opcoes.semScrollErro });
         return;
     }
 
@@ -798,8 +823,14 @@ function executarCalculo(opcoes) {
         exibirResultado(resultado, parametros, opcoes);
 
     } catch (erro) {
-        mostrarErro('Erro: ' + erro.message);
-        ativarGuia('entradas');
+        if (!opcoes.silencioso) {
+            mostrarErro('Erro: ' + erro.message, { semScroll: !!opcoes.semScrollErro });
+            if (!opcoes.preservarGuia) ativarGuia('entradas');
+        } else {
+            // Recalculo automático: erros transitórios (ex.: DIB parcialmente
+            // digitada) não devem aparecer nem provocar scroll/navegação.
+            console.debug('[RECALCULO SILENCIOSO]', erro.message || erro);
+        }
     }
 }
 
