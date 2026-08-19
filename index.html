@@ -748,14 +748,17 @@
                     </div>
 
                     <!-- PARCELAS VINCENDAS -->
-                    <div id="painelParcelasVincendas" class="bg-white p-4 rounded-lg border border-slate-200 hidden">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider">📊 Parcelas Vincendas</h3>
-                            <div class="text-sm text-slate-600">
+                    <div id="painelParcelasVincendas" class="border border-slate-200 rounded-lg overflow-hidden hidden">
+                        <button id="btnToggleParcelasVincendas" type="button"
+                                class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 text-left">
+                            <span class="font-semibold text-slate-700">Parcelas vincendas</span>
+                            <span class="flex items-center gap-3 text-xs text-slate-500">
                                 <span id="quantidadeParcelasVincendasUI">0</span> parcela(s)
-                            </div>
-                        </div>
+                                <span id="statusParcelasVincendas">Fechado</span>
+                            </span>
+                        </button>
 
+                        <div id="conteudoParcelasVincendas" class="hidden p-4 bg-white">
                         <!-- Totalizador das vincendas: mesma linguagem visual das vencidas,
                              sempre acima da tabela/composição. -->
                         <div id="resumoParcelasVincendas" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
@@ -812,6 +815,7 @@
                                 </thead>
                                 <tbody id="corpoParcelasVincendas"></tbody>
                             </table>
+                        </div>
                         </div>
 
                     </div>

@@ -1,3 +1,9 @@
+
+## B16 — UX Guia 6 — Parcelas vincendas recolhíveis
+- Bloco `Parcelas vincendas` transformado em painel recolhível.
+- Removido o ícone `📊`.
+- Fechado por padrão, com quantidade de parcelas visível no cabeçalho.
+- Sem alteração no motor de cálculo.
 # B12 — 1.9A
 - Corrigida vincenda proporcional no mesmo mês da DIB/ajuizamento.
 - Ajustada tipografia e ações globais.

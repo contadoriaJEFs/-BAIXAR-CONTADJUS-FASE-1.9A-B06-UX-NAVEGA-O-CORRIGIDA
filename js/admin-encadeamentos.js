@@ -3964,6 +3964,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Fase 1.9A – Parcelas vincendas como bloco recolhível, fechado por padrão.
+    var btnVincendas = document.getElementById('btnToggleParcelasVincendas');
+    if (btnVincendas) {
+        btnVincendas.addEventListener('click', function() {
+            var conteudo = document.getElementById('conteudoParcelasVincendas');
+            var statusVincendas = document.getElementById('statusParcelasVincendas');
+            var aberto = conteudo && !conteudo.classList.contains('hidden');
+
+            if (conteudo) conteudo.classList.toggle('hidden', aberto);
+            if (statusVincendas) statusVincendas.textContent = aberto ? 'Fechado' : 'Aberto';
+        });
+    }
+
     var camposGuia6 = [
         'metodoVincendas',
         'tratamentoMesAjuizamento',
