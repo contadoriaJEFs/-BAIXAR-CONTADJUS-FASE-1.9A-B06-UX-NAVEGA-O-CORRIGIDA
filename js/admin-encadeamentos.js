@@ -2952,6 +2952,13 @@ function calcularAtualizacaoAteAjuizamento() {
     }
 
     var competenciaFinalNum = guia5ISOParaNumero(competenciaFinalISO);
+    var tratamentoEl = document.getElementById('tratamentoMesAjuizamento');
+    var tratamento = tratamentoEl ? tratamentoEl.value : 'integral';
+    var proporcional = tratamento === 'proporcional';
+    var fracaoVencida = proporcional ? guia6CalcularFracaoVencida(
+        (document.getElementById('dataAjuizamentoGuia6') || document.getElementById('dataAjuizamento') || {}).value || ''
+    ) : 1;
+
     var itens = [];
     var totalOriginal = 0;
     var totalCorrigido = 0;
@@ -2962,13 +2969,8 @@ function calcularAtualizacaoAteAjuizamento() {
 
     window.diferencasAtualizacaoAtual.forEach(function(item) {
         var competenciaISO = guia6NormalizarCompetenciaItem(item.competencia);
-        if (!competenciaISO) {
-            return;
-        }
-
-        if (guia5ISOParaNumero(competenciaISO) > competenciaFinalNum) {
-            return;
-        }
+        if (!competenciaISO) return;
+        if (guia5ISOParaNumero(competenciaISO) > competenciaFinalNum) return;
 
         var coef = guia5CalcularCoeficienteMensal(
             competenciaISO,
@@ -2976,40 +2978,24 @@ function calcularAtualizacaoAteAjuizamento() {
             window.parametrosCorrecaoAtual
         );
 
-        var diferenca = Number(item.diferenca) || 0;
-        var valorCorrigido = diferenca * coef.coeficiente;
+        var diferencaBase = Number(item.diferenca) || 0;
+        var ehCompetenciaAjuizamento = competenciaISO === competenciaFinalISO;
+        var fracaoAplicada = ehCompetenciaAjuizamento && proporcional ? fracaoVencida : 1;
 
-        var baseItem = {
-            competencia: item.competencia,
-            competenciaISO: competenciaISO,
-            diferenca: diferenca,
-            criterio: coef.criterio,
-            coeficiente: coef.coeficiente,
-            valorCorrigido: valorCorrigido
-        };
-
-        var juros = guia5CalcularJurosDeterministicos(
-            baseItem,
-            competenciaISO,
-            competenciaFinalISO,
-            parametrosJurosSemJuros
-        );
-
-        var valorJuros = 0;
-        var percentualJuros = 0;
-        var detalhamentoJuros = [];
-
-        if (juros) {
-            valorJuros = Number(juros.valorJuros) || 0;
-            percentualJuros = Number(juros.percentualJurosTotal) || 0;
-            detalhamentoJuros = juros.detalhamentoJuros || [];
-        }
+        // A competência do ajuizamento pertence às vencidas apenas na fração
+        // anterior ao ajuizamento quando o tratamento for proporcional.
+        // Para integral, ela permanece integral. Em ambos os casos, a SELIC
+        // dessa competência NÃO integra as vencidas: a atualização das
+        // vincendas é nominal e a parcela do ajuizamento não deve carregar
+        // SELIC para o lado das vencidas.
+        var diferenca = Math.round(diferencaBase * fracaoAplicada * 100) / 100;
+        var valorCorrigido = Math.round(diferenca * coef.coeficiente * 100) / 100;
 
         var valorSelic = 0;
         var percentualSelic = 0;
         var detalhamentoSelic = [];
 
-        if (window.parametrosSelicAtual) {
+        if (!ehCompetenciaAjuizamento && window.parametrosSelicAtual) {
             var selic = guia5CalcularSelic(
                 {
                     competenciaISO: competenciaISO,
@@ -3018,13 +3004,12 @@ function calcularAtualizacaoAteAjuizamento() {
                 competenciaFinalISO,
                 window.parametrosSelicAtual
             );
-
             percentualSelic = Number(selic.percentualSelic) || 0;
             valorSelic = Number(selic.valorSelic) || 0;
             detalhamentoSelic = selic.detalhamentoSelic || [];
         }
 
-        var total = valorCorrigido + valorJuros + valorSelic;
+        var total = valorCorrigido + valorSelic;
 
         var resultadoItem = {
             competencia: item.competencia,
@@ -3034,15 +3019,17 @@ function calcularAtualizacaoAteAjuizamento() {
             coeficiente: coef.coeficiente,
             valorCorrigido: valorCorrigido,
             percentualJurosAntesSelic: 0,
-            percentualJurosTotal: percentualJuros,
+            percentualJurosTotal: 0,
             valorJuros: 0,
             criteriosJuros: ['SEM_JUROS'],
             quantidadeMesesJuros: 0,
-            detalhamentoJuros: detalhamentoJuros,
+            detalhamentoJuros: [],
             percentualSelic: percentualSelic,
             valorSelic: valorSelic,
             detalhamentoSelic: detalhamentoSelic,
-            total: total
+            total: total,
+            fracaoAplicada: fracaoAplicada,
+            competenciaAjuizamento: ehCompetenciaAjuizamento
         };
 
         totalOriginal += diferenca;
@@ -3059,6 +3046,7 @@ function calcularAtualizacaoAteAjuizamento() {
     window.resultadosAjuizamentoAtualizacao = {
         dataFinal: guia6ISOParaCompetencia(competenciaFinalISO),
         competenciaFinal: competenciaFinalISO,
+        tratamentoMesAjuizamento: tratamento,
         parametrosCorrecao: window.parametrosCorrecaoAtual,
         parametrosJuros: parametrosJurosSemJuros,
         parametrosSelic: window.parametrosSelicAtual || null,
@@ -3272,25 +3260,22 @@ function guia6CalcularValor13NaCompetencia(ano, memoria) {
 
 function calcularParcelaAjuizamento() {
     var competenciaISO = guia6ObterCompetenciaAjuizamentoISO();
-    if (!competenciaISO) {
-        throw new Error('Data do Ajuizamento inválida.');
+    if (!competenciaISO) throw new Error('Data do Ajuizamento inválida.');
+    if (!guia6CompetenciaDentroDaEvolucao(competenciaISO)) return 0;
+
+    // Para a formação das vincendas, esta é a parcela-base integral do
+    // benefício na competência do ajuizamento. Ela NÃO é o total atualizado
+    // das vencidas e NÃO carrega SELIC.
+    try {
+        var evolucao = guia6ObterValorEvolucaoNaCompetencia(competenciaISO);
+        var valor = Number(evolucao && evolucao.valor);
+        if (!isNaN(valor) && valor >= 0) return valor;
+    } catch (e) {
+        console.warn('[Guia 6] Não foi possível obter a parcela-base integral pela evolução.', e);
     }
 
-    if (!guia6CompetenciaDentroDaEvolucao(competenciaISO)) {
-        return 0;
-    }
-
-    // Na Formação da Demanda, a parcela do mês do ajuizamento é a própria
-    // diferença devida naquela competência, após a atualização até o
-    // ajuizamento. A evolução do benefício serve para projetar as
-    // competências futuras, mas não substitui a diferença da Guia 4.
     var itemAtualizacao = guia6ObterItemAtualizacaoAjuizamento();
-    if (itemAtualizacao) {
-        return Number(itemAtualizacao.total) || 0;
-    }
-
-    console.warn('[Guia 6] Não foi localizada a diferença da competência do ajuizamento.');
-    return 0;
+    return itemAtualizacao ? Number(itemAtualizacao.valorCorrigido) || 0 : 0;
 }
 
 function guia6ObterItemAtualizacaoAjuizamento() {
@@ -3593,16 +3578,12 @@ function calcularFormacaoDemanda() {
 
         calcularAtualizacaoAteAjuizamento();
 
+        // A memória até o ajuizamento já vem com a competência do ajuizamento
+        // proporcionalizada (quando aplicável) e sem SELIC nessa competência.
+        // Não aplicar uma segunda fração aqui.
         var valorVencidas = Number(
             window.resultadosAjuizamentoAtualizacao.totalAtualizado
         ) || 0;
-
-        // Na modalidade proporcional, o mês do ajuizamento é dividido.
-        valorVencidas = guia6CalcularVencidasAjustadas(
-            valorVencidas,
-            parametros.dataAjuizamento,
-            parametros.tratamentoMesAjuizamento
-        );
 
         var parcelaAjuizamento = calcularParcelaAjuizamento();
 
