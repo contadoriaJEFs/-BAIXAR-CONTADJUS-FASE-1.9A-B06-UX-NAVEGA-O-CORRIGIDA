@@ -2935,6 +2935,51 @@ function guia6CalcularFracaoVencida(dataAjuizamento) {
     return Math.max(0, 1 - guia6CalcularFracaoRemanescente(dataAjuizamento));
 }
 
+/**
+ * Quando DIB e Ajuizamento pertencem à mesma competência, a fração da
+ * competência já não pode ser calculada aplicando simplesmente a fração
+ * do ajuizamento sobre o valor mensal da competência.
+ *
+ * A evolução já entregou para essa competência somente a fração devida
+ * desde a DIB. Portanto, a competência precisa ser repartida novamente:
+ *   vencida  = dias entre DIB e dia anterior ao ajuizamento
+ *   vincenda = dias a partir do ajuizamento até o fim do mês comercial.
+ *
+ * A convenção do projeto é de mês comercial de 30 dias.
+ */
+function guia6ObterFracaoVencidaMesDibAjuizamento(dataAjuizamento) {
+    var dibEl = document.getElementById('dib');
+    var dib = dibEl ? String(dibEl.value || '').trim() : '';
+    var aju = String(dataAjuizamento || '').trim();
+
+    var pDib = dib.split('/');
+    var pAju = aju.split('/');
+    if (pDib.length !== 3 || pAju.length !== 3) return null;
+
+    var diaDib = parseInt(pDib[0], 10);
+    var mesDib = parseInt(pDib[1], 10);
+    var anoDib = parseInt(pDib[2], 10);
+    var diaAju = parseInt(pAju[0], 10);
+    var mesAju = parseInt(pAju[1], 10);
+    var anoAju = parseInt(pAju[2], 10);
+
+    if ([diaDib, mesDib, anoDib, diaAju, mesAju, anoAju].some(isNaN)) return null;
+    if (mesDib !== mesAju || anoDib !== anoAju) return null;
+
+    // Competência ativa desde a DIB até o fim do mês comercial.
+    var diasAtivos = Math.max(0, 30 - diaDib + 1);
+    var diasVencidos = Math.max(0, diaAju - diaDib);
+
+    if (diasAtivos <= 0) return 0;
+    return Math.min(1, diasVencidos / diasAtivos);
+}
+
+function guia6ObterFracaoVincendaMesDibAjuizamento(dataAjuizamento) {
+    var fracaoVencida = guia6ObterFracaoVencidaMesDibAjuizamento(dataAjuizamento);
+    if (fracaoVencida === null) return null;
+    return Math.max(0, 1 - fracaoVencida);
+}
+
 function calcularAtualizacaoAteAjuizamento() {
     var status = document.getElementById('statusFormacaoDemanda');
     var competenciaFinalISO = guia6ObterCompetenciaAjuizamentoISO();
@@ -2955,9 +3000,14 @@ function calcularAtualizacaoAteAjuizamento() {
     var tratamentoEl = document.getElementById('tratamentoMesAjuizamento');
     var tratamento = tratamentoEl ? tratamentoEl.value : 'integral';
     var proporcional = tratamento === 'proporcional';
-    var fracaoVencida = proporcional ? guia6CalcularFracaoVencida(
-        (document.getElementById('dataAjuizamentoGuia6') || document.getElementById('dataAjuizamento') || {}).value || ''
-    ) : 1;
+    var valorDataAjuizamento = (document.getElementById('dataAjuizamentoGuia6') || document.getElementById('dataAjuizamento') || {}).value || '';
+    var fracaoVencida = 1;
+    if (proporcional) {
+        fracaoVencida = guia6ObterFracaoVencidaMesDibAjuizamento(valorDataAjuizamento);
+        if (fracaoVencida === null) {
+            fracaoVencida = guia6CalcularFracaoVencida(valorDataAjuizamento);
+        }
+    }
 
     var itens = [];
     var totalOriginal = 0;
@@ -3409,10 +3459,15 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
         var valorMensal = valorMensalIntegral;
 
         if (cursor === competenciaAjuizamentoISO && tratamento === 'proporcional') {
-            // A primeira vincenda proporcional é a diferença do mês do
-            // ajuizamento. As demais competências usam o valor integral da
-            // evolução do benefício.
-            valorMensal = (Number(parcelaAjuizamento) || 0) * guia6CalcularFracaoRemanescente(dataAjuizamento);
+            // A primeira vincenda proporcional é somente a parte posterior
+            // ao ajuizamento. Quando DIB e ajuizamento estão na mesma
+            // competência, a fração deve ser calculada sobre a parte da
+            // competência que efetivamente existe desde a DIB.
+            var fracaoVincendaMesDib = guia6ObterFracaoVincendaMesDibAjuizamento(dataAjuizamento);
+            if (fracaoVincendaMesDib === null) {
+                fracaoVincendaMesDib = guia6CalcularFracaoRemanescente(dataAjuizamento);
+            }
+            valorMensal = (Number(parcelaAjuizamento) || 0) * fracaoVincendaMesDib;
         }
 
         var competenciaBR = guia6ISOParaCompetencia(cursor);
