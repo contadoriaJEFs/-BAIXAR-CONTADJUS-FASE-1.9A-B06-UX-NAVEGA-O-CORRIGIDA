@@ -3952,6 +3952,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    var btnTutorial = document.getElementById('btnToggleTutorialFormacaoDemanda');
+    if (btnTutorial) {
+        btnTutorial.addEventListener('click', function() {
+            var conteudo = document.getElementById('conteudoTutorialFormacaoDemanda');
+            var statusTutorial = document.getElementById('statusTutorialFormacaoDemanda');
+            var setaTutorial = document.getElementById('setaTutorialFormacaoDemanda');
+            var aberto = conteudo && !conteudo.classList.contains('hidden');
+
+            if (conteudo) conteudo.classList.toggle('hidden', aberto);
+            if (statusTutorial) statusTutorial.textContent = aberto ? 'Fechado' : 'Aberto';
+            if (setaTutorial) setaTutorial.textContent = aberto ? '▶' : '▼';
+        });
+    }
+
     var btnMemoria = document.getElementById('btnToggleMemoriaAjuizamento');
     if (btnMemoria) {
         btnMemoria.addEventListener('click', function() {
@@ -3974,6 +3988,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (conteudo) conteudo.classList.toggle('hidden', aberto);
             if (statusVincendas) statusVincendas.textContent = aberto ? 'Fechado' : 'Aberto';
+            var setaVincendas = document.getElementById('setaParcelasVincendas');
+            if (setaVincendas) setaVincendas.textContent = aberto ? '▶' : '▼';
         });
     }
 
