@@ -20,6 +20,50 @@ function ativarGuia(nomeGuia) {
 }
 
 // =====================================================================
+// RECÁLCULO AUTOMÁTICO DAS GUIAS
+// =====================================================================
+var recalculoGlobalTimer = null;
+var recalculoGlobalEmExecucao = false;
+
+function agendarRecalculoGlobal() {
+    clearTimeout(recalculoGlobalTimer);
+    recalculoGlobalTimer = setTimeout(recalcularTudoAutomaticamente, 350);
+}
+
+function recalcularTudoAutomaticamente() {
+    if (recalculoGlobalEmExecucao) return;
+
+    var dib = document.getElementById('dib')?.value?.trim() || '';
+    var rmi = document.getElementById('rmi')?.value?.trim() || '';
+    var dataFinal = document.getElementById('dataFinal')?.value?.trim() || '';
+    var tipoAcao = document.getElementById('tipoAcao')?.value || '';
+    if (tipoAcao !== 'previdenciaria' || !dib || !rmi || !dataFinal) return;
+
+    recalculoGlobalEmExecucao = true;
+    try {
+        if (typeof executarCalculo === 'function') executarCalculo({ silencioso: true });
+        if (typeof montarTabelaDiferencas === 'function') montarTabelaDiferencas();
+
+        if (window.parametrosCorrecaoAtual && typeof importarDiferencasGuia4ParaAtualizacao === 'function') {
+            importarDiferencasGuia4ParaAtualizacao();
+            if (typeof calcularAtualizacaoGuia5 === 'function') calcularAtualizacaoGuia5();
+
+            var dataAjuizamento = (document.getElementById('dataAjuizamentoGuia6')?.value || document.getElementById('dataAjuizamento')?.value || '').trim();
+            if (dataAjuizamento && typeof calcularFormacaoDemanda === 'function') {
+                calcularFormacaoDemanda();
+            }
+        }
+    } catch (erro) {
+        console.warn('[RECÁLCULO AUTOMÁTICO]', erro.message || erro);
+    } finally {
+        recalculoGlobalEmExecucao = false;
+    }
+}
+
+window.agendarRecalculoGlobal = agendarRecalculoGlobal;
+window.recalcularTudoAutomaticamente = recalcularTudoAutomaticamente;
+
+// =====================================================================
 // DOMContentLoaded
 // =====================================================================
 
@@ -90,6 +134,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dataAtualizacao) {
         dataAtualizacao.addEventListener('input', sincronizarDataFinal);
     }
+
+    // Alterações relevantes recalculam as guias dependentes sem exigir que
+    // o usuário abra a Guia 4 ou a Guia 5 para disparar os encadeamentos.
+    [
+        'dib', 'rmi', 'dataFinal', 'dataAjuizamento', 'dataAtualizacao',
+        'inicioJuros', 'possuiAbonoDevido', 'incluir13FinalAberto',
+        'tipoBeneficio', 'baseadoSalarioMinimoDevido', 'percentualDesdobramento',
+        'adicionalRenda', 'adicionalPercentual', 'dibAnterior'
+    ].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', agendarRecalculoGlobal);
+        el.addEventListener('change', agendarRecalculoGlobal);
+    });
 
     // Inicializar Guia 4
     if (typeof initGuiaDiferencas === 'function') {

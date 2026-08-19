@@ -266,24 +266,28 @@ function obterFracaoRecebidaDesdeDib(mes, ano, ben) {
 // =====================================================================
 
 function obterValorIntegral(memoria, competencia, rmi, rmaFinal) {
-    if (!memoria || memoria.length === 0) {
-        return rmaFinal || rmi || 0;
-    }
-    let valor = rmi || 0;
+    // A ausência de memória não significa ausência de valor. Em especial,
+    // quando a evolução não atravessou nenhum reajuste, ainda precisamos
+    // aplicar os limitadores vigentes na competência consultada.
+    let valor = Number(rmaFinal) || Number(rmi) || 0;
     const numComp = converterCompetenciaParaNumero(competencia);
     let encontrou = false;
 
-    for (let item of memoria) {
-        const numItem = converterCompetenciaParaNumero(item.competencia);
-        if (!isNaN(numItem) && numItem <= numComp) {
-            valor = item.valorFinal;
-            encontrou = true;
-        } else {
-            break;
+    if (Array.isArray(memoria) && memoria.length) {
+        for (let item of memoria) {
+            const numItem = converterCompetenciaParaNumero(item.competencia);
+            if (!isNaN(numItem) && numItem <= numComp) {
+                valor = Number(item.valorFinal) || 0;
+                encontrou = true;
+            } else {
+                break;
+            }
         }
     }
 
-    if (!encontrou) {
+    // Se não encontramos um marco aplicável — inclusive quando a memória
+    // está vazia — aplica-se o piso/teto da própria competência.
+    if (!encontrou || !Array.isArray(memoria) || memoria.length === 0) {
         const limitadores = obterLimitadores(competencia);
         if (limitadores) {
             const { salarioMinimo, teto } = limitadores;
@@ -294,7 +298,8 @@ function obterValorIntegral(memoria, competencia, rmi, rmaFinal) {
             }
         }
     }
-    return valor;
+
+    return Number(valor) || 0;
 }
 
 // =====================================================================

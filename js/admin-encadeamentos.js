@@ -2801,8 +2801,26 @@ window.parametrosFormacaoDemanda = window.parametrosFormacaoDemanda || {
 window.resultadosAjuizamentoAtualizacao = window.resultadosAjuizamentoAtualizacao || null;
 window.resultadoAjuizamento = window.resultadoAjuizamento || null;
 
+function guia6ObterCampoDataAjuizamento() {
+    return document.getElementById('dataAjuizamentoGuia6') || document.getElementById('dataAjuizamento');
+}
+
+function guia6SincronizarDataAjuizamento(origem) {
+    var entrada = document.getElementById('dataAjuizamento');
+    var guia6 = document.getElementById('dataAjuizamentoGuia6');
+    if (!entrada || !guia6) return;
+
+    var valor = String(origem && origem.value !== undefined ? origem.value : entrada.value || guia6.value || '').trim();
+    if (origem !== entrada && origem !== guia6) {
+        valor = entrada.value.trim() || guia6.value.trim();
+    }
+
+    if (entrada.value !== valor) entrada.value = valor;
+    if (guia6.value !== valor) guia6.value = valor;
+}
+
 function guia6ObterCompetenciaAjuizamentoISO() {
-    var campo = document.getElementById('dataAjuizamento');
+    var campo = guia6ObterCampoDataAjuizamento();
     var valor = campo ? campo.value.trim() : '';
     if (!valor) return null;
 
@@ -3225,14 +3243,13 @@ function guia6CalcularValor13NaCompetencia(ano, memoria) {
     var beneficio = guia6ObterBeneficioDevidoPara13();
     if (!beneficio.possuiAbono) return 0;
 
-    var memoria13 = Array.isArray(memoria) && memoria.length
+    // A memória pode ser vazia quando não houve reajuste. O motor agora
+    // fornece uma âncora de valor para esse cenário, mas mantemos o fallback
+    // vazio porque calcular13ParaAno() também consegue obter a base pela RMI
+    // e pelos limitadores da competência.
+    var memoria13 = Array.isArray(memoria)
         ? memoria
-        : guia6ObterMemoriaEvolucaoReal();
-
-    if (!memoria13 || !memoria13.length) {
-        console.warn('[Guia 6] Memória real da evolução não disponível; 13º não será presumido.');
-        return 0;
-    }
+        : (guia6ObterMemoriaEvolucaoReal() || []);
 
     var resultado13 = calcular13ParaAno(beneficio, ano, memoria13);
     if (!resultado13 || resultado13.valor === undefined || resultado13.valor === null) {
@@ -3253,12 +3270,13 @@ function calcularParcelaAjuizamento() {
         return 0;
     }
 
-    // A parcela-base das vincendas é o principal corrigido da competência
-    // do ajuizamento, sem SELIC. A SELIC pertence à memória das vencidas e
-    // não deve contaminar a base usada para projetar vincendas.
+    // Na Formação da Demanda, a parcela do mês do ajuizamento é a própria
+    // diferença devida naquela competência, após a atualização até o
+    // ajuizamento. A evolução do benefício serve para projetar as
+    // competências futuras, mas não substitui a diferença da Guia 4.
     var itemAtualizacao = guia6ObterItemAtualizacaoAjuizamento();
     if (itemAtualizacao) {
-        return Number(itemAtualizacao.valorCorrigido) || 0;
+        return Number(itemAtualizacao.total) || 0;
     }
 
     console.warn('[Guia 6] Não foi localizada a diferença da competência do ajuizamento.');
@@ -3330,32 +3348,40 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
     }
 
     if (metodo === '1_parcela_anual') {
-        var parcelaBase = Number(parcelaAjuizamento) || 0;
-        var primeiraParcela = parcelaBase;
-        var quantidadeDemaisParcelas = 11;
+        var baseAnual = Number(parcelaAjuizamento) || 0;
 
         if (tratamento === 'proporcional') {
-            primeiraParcela = parcelaBase * guia6CalcularFracaoRemanescente(dataAjuizamento);
+            baseAnual = baseAnual * guia6CalcularFracaoRemanescente(dataAjuizamento);
         }
 
-        var valorDemaisParcelas = parcelaBase * quantidadeDemaisParcelas;
-        var totalAnual = primeiraParcela + valorDemaisParcelas;
+        var baseIntegral = Number(parcelaAjuizamento) || 0;
+        var valorPrimeiraParcela = baseAnual;
+        var valorDemaisParcelas = baseIntegral;
+        var percentualBase = tratamento === 'proporcional'
+            ? guia6CalcularFracaoRemanescente(dataAjuizamento) * 100
+            : 100;
 
         return {
-            valor: totalAnual,
+            valor: baseAnual * 12,
             parcelas: [],
             quantidadeParcelas: 12,
             metodo: metodo,
-            resumoAnual: {
-                parcelaBase: parcelaBase,
-                fracaoPrimeiraParcela: tratamento === 'proporcional'
-                    ? guia6CalcularFracaoRemanescente(dataAjuizamento)
-                    : 1,
-                primeiraParcela: primeiraParcela,
-                quantidadeDemaisParcelas: quantidadeDemaisParcelas,
-                valorDemaisParcelas: valorDemaisParcelas,
-                total: totalAnual
-            }
+            composicao: [
+                {
+                    descricao: '1ª parcela — mês do ajuizamento',
+                    quantidade: 1,
+                    valorUnitario: valorPrimeiraParcela,
+                    total: valorPrimeiraParcela,
+                    detalhe: Number(percentualBase).toFixed(4).replace('.', ',') + '% da base (' + formatarMoedaAtualizacao(baseIntegral) + ')'
+                },
+                {
+                    descricao: 'Demais parcelas',
+                    quantidade: 11,
+                    valorUnitario: valorDemaisParcelas,
+                    total: valorDemaisParcelas * 11,
+                    detalhe: 'parcelas integrais'
+                }
+            ]
         };
     }
 
@@ -3429,7 +3455,16 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
         valor: total,
         parcelas: parcelas,
         quantidadeParcelas: parcelas.length,
-        metodo: metodo
+        metodo: metodo,
+        composicao: parcelas.map(function(parcela) {
+            return {
+                descricao: parcela.competencia,
+                quantidade: 1,
+                valorUnitario: parcela.valor,
+                total: parcela.valor,
+                inclui13: !!parcela.inclui13
+            };
+        })
     };
 }
 
@@ -3576,7 +3611,7 @@ function calcularFormacaoDemanda() {
         var valorAposRenuncia = valorDemanda - renuncia;
         var acordo = calcularAcordo(valorAposRenuncia, parametros);
 
-            window.resultadoAjuizamento = {
+        window.resultadoAjuizamento = {
             valorVencidasAjuizamento: valorVencidas,
             parcelaAjuizamento: parcelaAjuizamento,
             valorVincendas: valorVincendas,
@@ -3594,12 +3629,11 @@ function calcularFormacaoDemanda() {
             valorFinal: acordo.valorFinal,
             parcelasVincendas: vincendas.parcelas,
             quantidadeParcelasVincendas: vincendas.quantidadeParcelas,
-            resumoVincendasAnual: vincendas.resumoAnual || null,
+            composicaoVincendas: vincendas.composicao || [],
             desatualizado: false
         };
 
         renderizarFormacaoDemanda();
-        renderizarMemoriaVincendas();
 
         if (status) {
             status.textContent = '✅ Formação da demanda calculada com sucesso.';
@@ -3623,40 +3657,9 @@ function renderizarMemoriaAjuizamento() {
 
     if (!resultado || !tbody) return;
 
-    var itens = resultado.itens || [];
-    var competenciaAjuizamentoISO = guia6ObterCompetenciaAjuizamentoISO();
-    var tratamento = window.parametrosFormacaoDemanda
-        ? window.parametrosFormacaoDemanda.tratamentoMesAjuizamento
-        : 'integral';
-    var fracaoVencida = tratamento === 'proporcional'
-        ? guia6CalcularFracaoVencida(
-            window.parametrosFormacaoDemanda
-                ? window.parametrosFormacaoDemanda.dataAjuizamento
-                : ''
-        )
-        : 1;
-
-    var itensExibicao = itens.map(function(item) {
-        var copia = Object.assign({}, item);
-        if (tratamento === 'proporcional' && item.competenciaISO === competenciaAjuizamentoISO) {
-            // Na memória visual das vencidas, a competência do ajuizamento
-            // mostra exatamente a parcela que pertence às vencidas:
-            // principal corrigido proporcional e SELIC zero.
-            copia.diferenca = (Number(item.diferenca) || 0) * fracaoVencida;
-            copia.valorCorrigido = (Number(item.valorCorrigido) || 0) * fracaoVencida;
-            copia.percentualJurosTotal = 0;
-            copia.valorJuros = 0;
-            copia.percentualSelic = 0;
-            copia.valorSelic = 0;
-            copia.detalhamentoSelic = [];
-            copia.total = copia.valorCorrigido;
-        }
-        return copia;
-    });
-
     tbody.innerHTML = '';
 
-    itensExibicao.forEach(function(item) {
+    resultado.itens.forEach(function(item) {
         var tr = document.createElement('tr');
         tr.className = 'border-b border-slate-200 hover:bg-slate-50';
 
@@ -3665,8 +3668,8 @@ function renderizarMemoriaAjuizamento() {
             formatarMoedaAtualizacao(item.diferenca),
             item.coeficiente !== undefined ? Number(item.coeficiente).toFixed(10) : '-',
             formatarMoedaAtualizacao(item.valorCorrigido),
-            formatarMoedaAtualizacao(item.valorJuros || 0),
-            formatarMoedaAtualizacao(item.valorSelic || 0),
+            formatarMoedaAtualizacao(0),
+            formatarMoedaAtualizacao(item.valorSelic),
             formatarMoedaAtualizacao(item.total)
         ];
 
@@ -3680,88 +3683,70 @@ function renderizarMemoriaAjuizamento() {
         tbody.appendChild(tr);
     });
 
-    var totalOriginalExibicao = itensExibicao.reduce(function(soma, item) {
-        return soma + (Number(item.diferenca) || 0);
-    }, 0);
-    var totalCorrigidoExibicao = itensExibicao.reduce(function(soma, item) {
-        return soma + (Number(item.valorCorrigido) || 0);
-    }, 0);
-    var totalJurosExibicao = itensExibicao.reduce(function(soma, item) {
-        return soma + (Number(item.valorJuros) || 0);
-    }, 0);
-    var totalSelicExibicao = itensExibicao.reduce(function(soma, item) {
-        return soma + (Number(item.valorSelic) || 0);
-    }, 0);
-    var totalAtualizadoExibicao = itensExibicao.reduce(function(soma, item) {
-        return soma + (Number(item.total) || 0);
-    }, 0);
-
     var originalEl = document.getElementById('totalOriginalAjuizamento');
     var corrigidoEl = document.getElementById('totalCorrigidoAjuizamento');
     var jurosEl = document.getElementById('totalJurosAjuizamento');
     var selicEl = document.getElementById('totalSelicAjuizamento');
     var totalEl = document.getElementById('totalAtualizadoAjuizamento');
 
-    if (originalEl) originalEl.textContent = formatarMoedaAtualizacao(totalOriginalExibicao);
-    if (corrigidoEl) corrigidoEl.textContent = formatarMoedaAtualizacao(totalCorrigidoExibicao);
-    if (jurosEl) jurosEl.textContent = formatarMoedaAtualizacao(totalJurosExibicao);
-    if (selicEl) selicEl.textContent = formatarMoedaAtualizacao(totalSelicExibicao);
-    if (totalEl) totalEl.textContent = formatarMoedaAtualizacao(totalAtualizadoExibicao);
+    if (originalEl) originalEl.textContent = formatarMoedaAtualizacao(resultado.totalOriginal);
+    if (corrigidoEl) corrigidoEl.textContent = formatarMoedaAtualizacao(resultado.totalCorrigido);
+    if (jurosEl) jurosEl.textContent = formatarMoedaAtualizacao(0);
+    if (selicEl) selicEl.textContent = formatarMoedaAtualizacao(resultado.totalSelic);
+    if (totalEl) totalEl.textContent = formatarMoedaAtualizacao(resultado.totalAtualizado);
 }
 
-function renderizarMemoriaVincendas() {
+function renderizarParcelasVincendas() {
     var resultado = window.resultadoAjuizamento;
-    var painel = document.getElementById('painelMemoriaVincendas');
-    var tbody = document.getElementById('corpoMemoriaVincendas');
-    var blocoAnual = document.getElementById('resumoVincendasAnual');
-    var blocoAte12 = document.getElementById('tabelaVincendasAte12');
+    var container = document.getElementById('painelParcelasVincendas');
+    var tbody = document.getElementById('corpoParcelasVincendas');
+    var totalEl = document.getElementById('totalParcelasVincendas');
+    var quantidadeEl = document.getElementById('quantidadeParcelasVincendasUI');
+    var tabelaCompetencias = document.getElementById('tabelaCompetenciasVincendas');
+    var tabelaComposicao = document.getElementById('tabelaComposicaoVincendas');
+    var corpoComposicao = document.getElementById('corpoComposicaoVincendas');
 
-    if (!painel || !tbody || !resultado) return;
+    if (!resultado || !container) return;
+    container.classList.remove('hidden');
 
-    var metodo = window.parametrosFormacaoDemanda
-        ? window.parametrosFormacaoDemanda.metodoVincendas
-        : null;
+    if (totalEl) totalEl.textContent = formatarMoedaAtualizacao(resultado.valorVincendas);
+    if (quantidadeEl) quantidadeEl.textContent = String(resultado.quantidadeParcelasVincendas || 0);
 
-    var exibir = metodo === '1_parcela_anual' || metodo === 'ate_12';
-    painel.classList.toggle('hidden', !exibir);
-
-    if (blocoAnual) blocoAnual.classList.toggle('hidden', metodo !== '1_parcela_anual');
-    if (blocoAte12) blocoAte12.classList.toggle('hidden', metodo !== 'ate_12');
-
-    if (!exibir) return;
+    var metodo = window.parametrosFormacaoDemanda && window.parametrosFormacaoDemanda.metodoVincendas;
 
     if (metodo === '1_parcela_anual') {
-        var anual = resultado.resumoVincendasAnual || null;
-        if (!anual) {
-            tbody.innerHTML = '';
-            return;
-        }
+        if (tabelaCompetencias) tabelaCompetencias.classList.add('hidden');
+        if (tabelaComposicao) tabelaComposicao.classList.remove('hidden');
+        if (!corpoComposicao) return;
+        corpoComposicao.innerHTML = '';
 
-        var fracaoEl = document.getElementById('vincendaAnualFracao');
-        var primeiraEl = document.getElementById('vincendaAnualPrimeira');
-        var qtdEl = document.getElementById('vincendaAnualQtdDemais');
-        var demaisEl = document.getElementById('vincendaAnualDemais');
-        var baseEl = document.getElementById('vincendaAnualBase');
-        var totalEl = document.getElementById('vincendaAnualTotal');
-
-        if (baseEl) baseEl.textContent = formatarMoedaAtualizacao(anual.parcelaBase);
-        var baseDemaisEl = document.getElementById('vincendaAnualBaseDemais');
-        if (baseDemaisEl) baseDemaisEl.textContent = formatarMoedaAtualizacao(anual.parcelaBase) + ' por parcela';
-        if (fracaoEl) fracaoEl.textContent = (Number(anual.fracaoPrimeiraParcela) * 100).toLocaleString('pt-BR', {minimumFractionDigits: 4, maximumFractionDigits: 4}) + '%';
-        if (primeiraEl) primeiraEl.textContent = formatarMoedaAtualizacao(anual.primeiraParcela);
-        if (qtdEl) qtdEl.textContent = String(anual.quantidadeDemaisParcelas);
-        if (demaisEl) demaisEl.textContent = formatarMoedaAtualizacao(anual.valorDemaisParcelas);
-        if (totalEl) totalEl.textContent = formatarMoedaAtualizacao(anual.total);
-
-        tbody.innerHTML = '';
+        var composicao = resultado.composicaoVincendas || [];
+        composicao.forEach(function(item) {
+            var tr = document.createElement('tr');
+            tr.className = 'border-b border-slate-200';
+            var detalhe = item.detalhe || '';
+            var valorUnitario = formatarMoedaAtualizacao(item.valorUnitario);
+            var descricao = item.descricao;
+            if (detalhe) {
+                descricao += ' — ' + detalhe;
+            }
+            [descricao, String(item.quantidade), valorUnitario, formatarMoedaAtualizacao(item.total)].forEach(function(valor, i) {
+                var td = document.createElement('td');
+                td.className = 'p-3 ' + (i === 0 ? 'font-semibold text-slate-700' : 'text-right font-mono');
+                td.textContent = valor;
+                tr.appendChild(td);
+            });
+            corpoComposicao.appendChild(tr);
+        });
         return;
     }
 
+    if (tabelaComposicao) tabelaComposicao.classList.add('hidden');
+    if (tabelaCompetencias) tabelaCompetencias.classList.remove('hidden');
+    if (!tbody) return;
     tbody.innerHTML = '';
-    if (metodo !== 'ate_12') return;
 
-    var parcelas = Array.isArray(resultado.parcelasVincendas) ? resultado.parcelasVincendas : [];
-    parcelas.forEach(function(parcela) {
+    (resultado.parcelasVincendas || []).forEach(function(parcela) {
         var tr = document.createElement('tr');
         tr.className = 'border-b border-slate-200 hover:bg-slate-50';
         var valores = [
@@ -3773,23 +3758,14 @@ function renderizarMemoriaVincendas() {
             formatarMoedaAtualizacao(0),
             formatarMoedaAtualizacao(parcela.valor)
         ];
-        valores.forEach(function(valor, index) {
+        valores.forEach(function(valor, i) {
             var td = document.createElement('td');
-            td.className = 'p-2 ' + (index === 0 ? 'font-semibold' : 'text-right font-mono');
+            td.className = 'p-3 ' + (i === 0 ? 'font-semibold' : 'text-right font-mono');
             td.textContent = valor;
             tr.appendChild(td);
         });
         tbody.appendChild(tr);
     });
-
-    var totalElAte12 = document.getElementById('totalMemoriaVincendas');
-    var qtdElAte12 = document.getElementById('quantidadeMemoriaVincendas');
-    if (totalElAte12) totalElAte12.textContent = formatarMoedaAtualizacao(resultado.valorVincendas);
-    if (qtdElAte12) qtdElAte12.textContent = String(resultado.quantidadeParcelasVincendas || 0) + ' parcelas';
-    var totalRodapeEl = document.getElementById('totalMemoriaVincendasRodapeValor');
-    var qtdRodapeEl = document.getElementById('quantidadeMemoriaVincendasRodape');
-    if (totalRodapeEl) totalRodapeEl.textContent = formatarMoedaAtualizacao(resultado.valorVincendas);
-    if (qtdRodapeEl) qtdRodapeEl.textContent = String(resultado.quantidadeParcelasVincendas || 0) + ' parcelas';
 }
 
 function renderizarFormacaoDemanda() {
@@ -3827,6 +3803,8 @@ function renderizarFormacaoDemanda() {
             el.textContent = formatarMoedaAtualizacao(valores[id]);
         }
     });
+
+    renderizarParcelasVincendas();
 }
 
 function guia6AtualizarEstadoAcordo() {
@@ -3867,8 +3845,8 @@ window.calcularRenunciaAjuizamento = calcularRenunciaAjuizamento;
 window.calcularAcordo = calcularAcordo;
 window.calcularFormacaoDemanda = calcularFormacaoDemanda;
 window.renderizarMemoriaAjuizamento = renderizarMemoriaAjuizamento;
-window.renderizarMemoriaVincendas = renderizarMemoriaVincendas;
 window.renderizarFormacaoDemanda = renderizarFormacaoDemanda;
+window.renderizarParcelasVincendas = renderizarParcelasVincendas;
 
 // =====================================================================
 // INICIALIZAÇÃO – DOMContentLoaded
@@ -3905,6 +3883,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'acordoAtivo',
         'percentualAcordoPreset',
         'percentualAcordo',
+        'dataAjuizamentoGuia6',
         'dataAjuizamento'
     ];
 
@@ -3913,6 +3892,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!el) return;
 
         function sincronizarGuia6() {
+            if (id === 'dataAjuizamentoGuia6' || id === 'dataAjuizamento') {
+                guia6SincronizarDataAjuizamento(el);
+            }
             // Alguns campos alteram outros controles da seção de acordo
             // (por exemplo, desativar o acordo força 100%). Atualizamos a UI
             // primeiro e, em seguida, coletamos o estado completo para que o
@@ -3923,6 +3905,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             guia6ColetarParametrosFormacaoDemanda();
             guia6InvalidarResultado();
+            if (typeof agendarRecalculoGlobal === 'function') {
+                agendarRecalculoGlobal();
+            }
         }
 
         el.addEventListener('input', sincronizarGuia6);
@@ -3930,6 +3915,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     guia6AtualizarEstadoAcordo();
+    guia6SincronizarDataAjuizamento();
 
     document.addEventListener('keydown', function(e) {
         var tag = e.target.tagName;
@@ -4027,24 +4013,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function configurarListenerReset(containerId, eventos) {
+    function configurarListenerDependencias(containerId, eventos) {
         var container = document.getElementById(containerId);
         if (!container) return;
         eventos.forEach(function(evt) {
-            container.addEventListener(evt, function(e) {
-                if (containerId === 'guia-atualizacao') return;
-                if (window.diferencasAtualizacaoAtual) {
-                    limparDiferencasAtualizacao(
-                        '⚠️ Diferenças não importadas após alteração dos dados. Reimporte a Guia 4. Parâmetros de correção e juros mantidos.'
-                    );
+            container.addEventListener(evt, function() {
+                if (typeof agendarRecalculoGlobal === 'function') {
+                    agendarRecalculoGlobal();
                 }
             }, true);
         });
     }
 
-    configurarListenerReset('guia-entradas', ['input', 'change']);
-    configurarListenerReset('guia-beneficios-recebidos', ['input', 'change']);
-    configurarListenerReset('guia-diferencas', ['input', 'change']);
+    configurarListenerDependencias('guia-entradas', ['input', 'change']);
+    configurarListenerDependencias('guia-beneficios-recebidos', ['input', 'change']);
+    configurarListenerDependencias('guia-diferencas', ['input', 'change']);
+    configurarListenerDependencias('guia-atualizacao', ['input', 'change']);
 
     document.querySelectorAll('.nav-guia button').forEach(function(btn) {
         btn.addEventListener('click', function() {

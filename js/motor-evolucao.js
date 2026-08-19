@@ -157,13 +157,50 @@ function calcularEvolucao(parametros) {
     // 5) Verificar se existe pelo menos uma tabela posterior à DIB de referência
     const tabelasPosteriores = tabelasOrdenadas.filter(tab => tab.chaveCronologica > chaveDibRef);
     if (tabelasPosteriores.length === 0) {
-        // Nenhum reajuste aplicável: retorna valores padrão
+        // Mesmo sem reajuste posterior à DIB, a RMI precisa respeitar os
+        // limitadores vigentes na competência final da evolução. Antes desta
+        // correção, a memória vazia fazia a cadeia seguinte assumir a RMI
+        // sem aplicar piso/teto (ex.: R$ 1.000,00 em 2024 em vez de R$ 1.412,00).
+        const competenciaFinal = String(finalObj.mes).padStart(2, '0') + '/' + finalObj.ano;
+        const limitadores = obterLimitadores(competenciaFinal);
+        let valorFinalSemReajuste = Number(rmi) || 0;
+        let statusSemReajuste = 'NORMAL';
+        let tipoSemReajuste = 'SEM_REAJUSTE';
+
+        if (limitadores) {
+            if (valorFinalSemReajuste < limitadores.salarioMinimo) {
+                valorFinalSemReajuste = limitadores.salarioMinimo;
+                statusSemReajuste = 'PISO';
+                tipoSemReajuste = 'PISO_INICIAL';
+            } else if (valorFinalSemReajuste > limitadores.teto) {
+                valorFinalSemReajuste = limitadores.teto;
+                statusSemReajuste = 'LIMITADO_TETO';
+                tipoSemReajuste = 'TETO_INICIAL';
+            }
+        }
+
+        // Cria um marco de memória na competência final. Ele não representa
+        // um reajuste; é um âncora de valor para as camadas consumidoras
+        // (Diferenças/13º/Guia 6) quando não existem marcos de reajuste.
+        const memoriaInicial = [{
+            competencia: competenciaFinal,
+            tipo: tipoSemReajuste,
+            indice: null,
+            salarioMinimo: limitadores ? limitadores.salarioMinimo : null,
+            teto: limitadores ? limitadores.teto : null,
+            indiceTeto: null,
+            status: statusSemReajuste,
+            valorTeorico: Number(rmi) || 0,
+            valorFinal: valorFinalSemReajuste,
+            valorEvoluido: Number(rmi) || 0
+        }];
+
         return {
-            memoria: [],
-            rmaFinal: rmi,
-            statusFinal: "NORMAL",
+            memoria: memoriaInicial,
+            rmaFinal: valorFinalSemReajuste,
+            statusFinal: statusSemReajuste,
             qtdReajustes: 0,
-            ultimoReajuste: "-",
+            ultimoReajuste: '-',
             ultimoIndice: null
         };
     }
@@ -172,6 +209,49 @@ function calcularEvolucao(parametros) {
     const tabelasIntervalo = tabelasOrdenadas.filter(tab => 
         tab.chaveCronologica > chaveDibRef && tab.chaveCronologica <= chaveFinal
     );
+
+    if (tabelasIntervalo.length === 0) {
+        // Há reajustes posteriores à DIB na base histórica, mas nenhum deles
+        // está dentro da Data Final. O resultado da evolução continua
+        // precisando respeitar o piso/teto da competência final.
+        const competenciaFinal = String(finalObj.mes).padStart(2, '0') + '/' + finalObj.ano;
+        const limitadores = obterLimitadores(competenciaFinal);
+        let valorFinalSemReajuste = Number(rmi) || 0;
+        let statusSemReajuste = 'NORMAL';
+        let tipoSemReajuste = 'SEM_REAJUSTE';
+
+        if (limitadores) {
+            if (valorFinalSemReajuste < limitadores.salarioMinimo) {
+                valorFinalSemReajuste = limitadores.salarioMinimo;
+                statusSemReajuste = 'PISO';
+                tipoSemReajuste = 'PISO_INICIAL';
+            } else if (valorFinalSemReajuste > limitadores.teto) {
+                valorFinalSemReajuste = limitadores.teto;
+                statusSemReajuste = 'LIMITADO_TETO';
+                tipoSemReajuste = 'TETO_INICIAL';
+            }
+        }
+
+        return {
+            memoria: [{
+                competencia: competenciaFinal,
+                tipo: tipoSemReajuste,
+                indice: null,
+                salarioMinimo: limitadores ? limitadores.salarioMinimo : null,
+                teto: limitadores ? limitadores.teto : null,
+                indiceTeto: null,
+                status: statusSemReajuste,
+                valorTeorico: Number(rmi) || 0,
+                valorFinal: valorFinalSemReajuste,
+                valorEvoluido: Number(rmi) || 0
+            }],
+            rmaFinal: valorFinalSemReajuste,
+            statusFinal: statusSemReajuste,
+            qtdReajustes: 0,
+            ultimoReajuste: '-',
+            ultimoIndice: null
+        };
+    }
 
     // 7) Executar evolução
     let valorAtual = rmi;
@@ -321,7 +401,8 @@ function calcularEvolucao(parametros) {
 // ---------------------------------------------------------------------
 // FUNÇÃO DE SEGURANÇA PARA A GUI "ENTRADAS"
 // ---------------------------------------------------------------------
-function executarCalculo() {
+function executarCalculo(opcoes) {
+    opcoes = opcoes || {};
     if (document.getElementById('tipoAcao').value !== 'previdenciaria') {
         mostrarErro('O cálculo de evolução está disponível apenas para "Ações Previdenciárias".');
         return;
@@ -350,7 +431,7 @@ function executarCalculo() {
         };
 
         const resultado = calcularEvolucao(parametros);
-        exibirResultado(resultado, parametros);
+        exibirResultado(resultado, parametros, opcoes);
 
     } catch (erro) {
         mostrarErro('Erro: ' + erro.message);
@@ -361,7 +442,8 @@ function executarCalculo() {
 // ---------------------------------------------------------------------
 // FUNÇÃO PARA EXIBIR O RESULTADO NA GUIA "EVOLUÇÃO DEVIDA"
 // ---------------------------------------------------------------------
-function exibirResultado(resultado, parametros) {
+function exibirResultado(resultado, parametros, opcoes) {
+    opcoes = opcoes || {};
     const { memoria, rmaFinal, statusFinal, qtdReajustes, ultimoReajuste, ultimoIndice } = resultado;
 
     window.memoriaEvolucaoDevida = memoria;
@@ -474,9 +556,11 @@ function exibirResultado(resultado, parametros) {
         msgSemCalculo.classList.add('hidden');
         msgSemCalculo.style.display = 'none';
     }
-    ativarGuia('evolucao-devida');
-    if (painelResultado) {
-        painelResultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!opcoes.silencioso) {
+        ativarGuia('evolucao-devida');
+        if (painelResultado) {
+            painelResultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 }
 
