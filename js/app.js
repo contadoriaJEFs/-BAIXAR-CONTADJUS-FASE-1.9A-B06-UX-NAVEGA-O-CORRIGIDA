@@ -25,6 +25,18 @@ function ativarGuia(nomeGuia) {
 var recalculoGlobalTimer = null;
 var recalculoGlobalEmExecucao = false;
 
+function dibEstaCompletaParaValidacao(valor) {
+    valor = String(valor || '').trim();
+    // Durante a edição, só validamos quando a data já tem uma forma completa.
+    // DD/MM/AAAA ou MM/AAAA.
+    return /^(?:\d{2}\/\d{2}\/\d{4}|\d{2}\/\d{4})$/.test(valor);
+}
+
+function entradaDataEmEdicao(id) {
+    const el = document.getElementById(id);
+    return !!(el && document.activeElement === el);
+}
+
 function agendarRecalculoGlobal() {
     clearTimeout(recalculoGlobalTimer);
     recalculoGlobalTimer = setTimeout(recalcularTudoAutomaticamente, 350);
@@ -38,6 +50,11 @@ function recalcularTudoAutomaticamente() {
     var dataFinal = document.getElementById('dataFinal')?.value?.trim() || '';
     var tipoAcao = document.getElementById('tipoAcao')?.value || '';
     if (tipoAcao !== 'previdenciaria' || !dib || !rmi || !dataFinal) return;
+
+    // Não tente calcular enquanto a DIB ainda estiver sendo digitada.
+    // Isso evita que '15', '15/0', etc. sejam tratados como erro e que a
+    // interface role até o painel de validação.
+    if (!dibEstaCompletaParaValidacao(dib)) return;
 
     recalculoGlobalEmExecucao = true;
     try {
@@ -129,10 +146,18 @@ document.addEventListener('DOMContentLoaded', function() {
         dibInputValidacao.addEventListener('blur', function() {
             const valor = this.value.trim();
             if (!valor) return;
-            const atual = document.activeElement;
+
+            // Se a entrada ainda estiver incompleta, não há erro a mostrar.
+            if (!dibEstaCompletaParaValidacao(valor)) return;
+
             setTimeout(function() {
                 try {
-                    executarCalculo({ silencioso: false, semScrollErro: true, preservarGuia: true });
+                    executarCalculo({
+                        silencioso: false,
+                        semScrollErro: true,
+                        preservarGuia: true,
+                        validacaoCampo: 'dib'
+                    });
                 } catch (e) {
                     console.debug('[VALIDACAO DIB]', e.message || e);
                 }
@@ -775,7 +800,10 @@ function mostrarErro(mensagem, opcoes) {
         // Validações disparadas pelo blur/input não devem retirar o campo
         // que o usuário acabou de editar da área visível. O scroll só ocorre
         // quando solicitado explicitamente.
-        if (!opcoes.semScroll) {
+        const campoEmEdicao = document.activeElement && document.activeElement.matches &&
+            document.activeElement.matches('input, select, textarea');
+        const devePreservarTela = opcoes.semScroll || opcoes.validacaoCampo || campoEmEdicao;
+        if (!devePreservarTela) {
             painelErro.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     } else if (!opcoes.silencioso) {
@@ -824,7 +852,7 @@ function executarCalculo(opcoes) {
 
     } catch (erro) {
         if (!opcoes.silencioso) {
-            mostrarErro('Erro: ' + erro.message, { semScroll: !!opcoes.semScrollErro });
+            mostrarErro('Erro: ' + erro.message, { semScroll: !!opcoes.semScrollErro, validacaoCampo: opcoes.validacaoCampo });
             if (!opcoes.preservarGuia) ativarGuia('entradas');
         } else {
             // Recalculo automático: erros transitórios (ex.: DIB parcialmente
