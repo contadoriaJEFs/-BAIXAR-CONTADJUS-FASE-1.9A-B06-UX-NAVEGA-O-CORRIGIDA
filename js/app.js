@@ -138,32 +138,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // DIB: durante a digitação, o recálculo automático permanece silencioso.
-    // Ao sair do campo, valida a entrada completa sem navegar para outra guia
-    // nem deslocar a tela até o painel de erro.
-    const dibInputValidacao = document.getElementById('dib');
-    if (dibInputValidacao) {
-        dibInputValidacao.addEventListener('blur', function() {
-            const valor = this.value.trim();
-            if (!valor) return;
-
-            // Se a entrada ainda estiver incompleta, não há erro a mostrar.
-            if (!dibEstaCompletaParaValidacao(valor)) return;
-
-            setTimeout(function() {
-                try {
-                    executarCalculo({
-                        silencioso: false,
-                        semScrollErro: true,
-                        preservarGuia: true,
-                        validacaoCampo: 'dib'
-                    });
-                } catch (e) {
-                    console.debug('[VALIDACAO DIB]', e.message || e);
-                }
-            }, 0);
-        });
-    }
+    // DIB: edição livre, seguindo o mesmo critério da Data do Ajuizamento.
+    // Nenhum blur dispara o cálculo ou muda de guia. A validação/cálculo
+    // ocorre somente por ação explícita do usuário (botão Calcular Evolução)
+    // ou pelo recálculo automático silencioso das dependências.
 
     // Sincronização Data de Atualização → Data Final
     const dataFinal = document.getElementById('dataFinal');

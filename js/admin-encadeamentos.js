@@ -4001,13 +4001,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    var btnImportarDiferencas = document.getElementById('btnImportarDiferencas');
-    if (btnImportarDiferencas) {
-        btnImportarDiferencas.addEventListener('click', function() {
-            importarDiferencasGuia4ParaAtualizacao();
-        });
-    }
-
     var btnCalcular = document.getElementById('btnCalcularAtualizacao');
     if (btnCalcular) {
         btnCalcular.addEventListener('click', function() {
