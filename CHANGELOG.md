@@ -1,3 +1,8 @@
+# B12 — 1.9A
+- Corrigida vincenda proporcional no mesmo mês da DIB/ajuizamento.
+- Ajustada tipografia e ações globais.
+- Compactada a Guia 1.
+
 # Changelog
 
 Todas as alterações relevantes do **ContadJus** e do módulo **LiquidaCalc** são registradas neste arquivo.

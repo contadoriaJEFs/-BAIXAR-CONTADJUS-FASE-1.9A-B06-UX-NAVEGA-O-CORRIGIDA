@@ -3396,7 +3396,25 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
         var baseAnual = Number(parcelaAjuizamento) || 0;
 
         if (tratamento === 'proporcional') {
-            baseAnual = baseAnual * guia6CalcularFracaoRemanescente(dataAjuizamento);
+            // Quando DIB e ajuizamento estão na mesma competência, a
+            // parcela-base integral pode representar somente a fração
+            // efetivamente devida desde a DIB. Nesse caso, a parte
+            // vincenda deve ser retirada dessa mesma competência ativa,
+            // e não da mensalidade integral.
+            var fracaoVincendaMesDibAnual = guia6ObterFracaoVincendaMesDibAjuizamento(dataAjuizamento);
+            if (fracaoVincendaMesDibAnual !== null) {
+                var valorCompetenciaAtivaAnual = Number(parcelaAjuizamento) || 0;
+                try {
+                    valorCompetenciaAtivaAnual = Number(
+                        guia6ObterValorEvolucaoNaCompetencia(competenciaAjuizamentoISO).valor
+                    ) || valorCompetenciaAtivaAnual;
+                } catch (eAnual) {
+                    // Mantém a base integral como fallback.
+                }
+                baseAnual = valorCompetenciaAtivaAnual * fracaoVincendaMesDibAnual;
+            } else {
+                baseAnual = baseAnual * guia6CalcularFracaoRemanescente(dataAjuizamento);
+            }
         }
 
         var baseIntegral = Number(parcelaAjuizamento) || 0;
@@ -3464,10 +3482,15 @@ function calcularVincendas(parcelaAjuizamento, parametros) {
             // competência, a fração deve ser calculada sobre a parte da
             // competência que efetivamente existe desde a DIB.
             var fracaoVincendaMesDib = guia6ObterFracaoVincendaMesDibAjuizamento(dataAjuizamento);
-            if (fracaoVincendaMesDib === null) {
-                fracaoVincendaMesDib = guia6CalcularFracaoRemanescente(dataAjuizamento);
+            if (fracaoVincendaMesDib !== null) {
+                // A evolução já limita o valor da competência à parcela
+                // efetivamente devida desde a DIB. Repartimos essa própria
+                // competência entre vencida e vincenda.
+                valorMensal = (Number(valorMensalIntegral) || 0) * fracaoVincendaMesDib;
+            } else {
+                valorMensal = (Number(parcelaAjuizamento) || 0) *
+                    guia6CalcularFracaoRemanescente(dataAjuizamento);
             }
-            valorMensal = (Number(parcelaAjuizamento) || 0) * fracaoVincendaMesDib;
         }
 
         var competenciaBR = guia6ISOParaCompetencia(cursor);

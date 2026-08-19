@@ -647,3 +647,89 @@
 #painelParcelasVincendas table tbody tr:last-child td {
     font-weight: 700;
 }
+
+
+/* ===================================================================== */
+/* B12 — UX: ações do caso, tipografia e compactação                     */
+/* ===================================================================== */
+
+.acoes-caso-global {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0.5rem 0 1rem;
+    padding: 0.45rem 0.7rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+}
+
+.acoes-caso-titulo {
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.acoes-caso-botoes {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.acao-caso {
+    border: 1px solid #cbd5e1;
+    border-radius: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+}
+
+.acao-exportar {
+    color: #047857;
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+.acao-exportar:hover { background: #d1fae5; }
+
+.acao-importar {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+.acao-importar:hover { background: #dbeafe; }
+
+.acao-limpar {
+    color: #475569;
+    background: #ffffff;
+}
+.acao-limpar:hover { background: #f8fafc; }
+
+/* Formação da Demanda: mesmo peso/tamanho do total das vincendas. */
+.resultado-renuncia-item.destaque strong {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+/* Guia 6: mesma escala de corpo das tabelas das Guias 4 e 5. */
+#guia-renuncia table {
+    font-size: 0.875rem;
+}
+
+#guia-renuncia table th {
+    font-size: 0.75rem;
+}
+
+@media (max-width: 700px) {
+    .acoes-caso-global {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
