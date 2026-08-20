@@ -97,6 +97,10 @@ const CATALOGO_INDEXADORES_JUROS = {
 // Base de dados históricos (alimentada com valores percentuais)
 const BASE_INDEXADORES_JUROS = {
     JUROS_POUPANCA: {
+    // Maio/2012: início da sistemática pós-MP 567/2012. Para o critério
+    // do Manual de Cálculos, a taxa aplicável era 0,5% a.m. (Selic anual
+    // acima de 8,5%).
+    "2012-05": 0.5000,
     "2012-06": 0.4828, "2012-07": 0.4973, "2012-08": 0.4675, "2012-09": 0.4273, "2012-10": 0.4273, "2012-11": 0.4134, "2012-12": 0.4134,
         
     "2013-01": 0.4134, "2013-02": 0.4134, "2013-03": 0.4134, "2013-04": 0.4134, "2013-05": 0.4273, "2013-06": 0.4551, 

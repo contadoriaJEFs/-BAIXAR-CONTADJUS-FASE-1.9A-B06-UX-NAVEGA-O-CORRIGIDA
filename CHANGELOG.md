@@ -1,4 +1,13 @@
 
+## B19 — Correção dos encadeamentos de juros da Guia 5
+
+- Encadeamentos oficiais passaram a ser carregados integralmente, sem corte pela primeira competência do caso.
+- Corrigidos os juros dos modelos MC-PREVID-2026 e MC-PREVID-2022 conforme os respectivos Manuais.
+- Corrigida a aplicação da Taxa Legal Previdenciária no mês seguinte à competência.
+- Sincronização de Início dos Juros da Guia 1 com a Guia 5 reforçada.
+- Incluída a competência 05/2012 na série histórica de poupança.
+- Auditoria dos modelos de Ações em Geral permanece como próxima etapa, devido às regras distintas para Fazenda Pública e devedor não enquadrado como Fazenda Pública.
+
 ## B16 — UX Guia 6 — Parcelas vincendas recolhíveis
 - Bloco `Parcelas vincendas` transformado em painel recolhível.
 - Removido o ícone `📊`.

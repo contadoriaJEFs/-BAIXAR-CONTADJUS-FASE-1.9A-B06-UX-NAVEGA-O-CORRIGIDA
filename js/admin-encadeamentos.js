@@ -1540,12 +1540,35 @@ function guia5CalcularJurosIntervalo(item, inicioJurosISO, fimISO, parametrosJur
             break;
         }
 
-        var taxa = guia5ObterTaxaJurosMensal(periodo.indice, cursor);
+        // Taxa legal: a taxa da competência é computada no mês seguinte
+        // (Manual CJF 2026, item 4.3.2, e Nota 3).
+        if (periodo.indice === 'TAXA_LEGAL' || periodo.indice === 'TAXA_LEGAL_PREVIDENCIARIA') {
+            var competenciaTaxaISO = guia5AnteriorCompetenciaISO(cursor);
+            var competenciaTaxaNum = guia5ISOParaNumero(competenciaTaxaISO);
+            var inicioPeriodoNum = guia5ISOParaNumero(guia5CompetenciaParaISO(periodo.inicio));
+            var fimPeriodoNum = periodo.fim ? guia5ISOParaNumero(guia5CompetenciaParaISO(periodo.fim)) : Number.MAX_SAFE_INTEGER;
 
-        // ===== CORREÇÃO: não incluir a taxa da competência igual a fimISO para índices legais =====
-        if (cursor === fimISO && (periodo.indice === 'TAXA_LEGAL' || periodo.indice === 'TAXA_LEGAL_PREVIDENCIARIA')) {
-            // Não soma esta taxa
+            if (competenciaTaxaNum < inicioPeriodoNum || competenciaTaxaNum > fimPeriodoNum) {
+                cursor = guia5ProximaCompetenciaISO(cursor);
+                continue;
+            }
+
+            var taxaLegalAplicada = guia5ObterTaxaJurosMensal(periodo.indice, competenciaTaxaISO);
+            totalTaxa += taxaLegalAplicada;
+            meses++;
+
+            if (criteriosJuros.indexOf(periodo.indice) === -1) {
+                criteriosJuros.push(periodo.indice);
+            }
+
+            detalhamentoJuros.push({
+                competenciaISO: cursor,
+                competenciaTaxaISO: competenciaTaxaISO,
+                indice: periodo.indice,
+                taxaPercentual: taxaLegalAplicada
+            });
         } else {
+            var taxa = guia5ObterTaxaJurosMensal(periodo.indice, cursor);
             totalTaxa += taxa;
             meses++;
 
@@ -1883,6 +1906,20 @@ function guia5ProximaCompetenciaISO(iso) {
         mes = 1;
     } else {
         mes++;
+    }
+    return ano + '-' + String(mes).padStart(2, '0');
+}
+
+function guia5AnteriorCompetenciaISO(iso) {
+    var partes = iso.split('-');
+    var ano = parseInt(partes[0], 10);
+    var mes = parseInt(partes[1], 10);
+    if (!Number.isFinite(ano) || !Number.isFinite(mes)) return null;
+    if (mes === 1) {
+        ano--;
+        mes = 12;
+    } else {
+        mes--;
     }
     return ano + '-' + String(mes).padStart(2, '0');
 }
@@ -2226,9 +2263,17 @@ const ENCADEAMENTOS_OFICIAIS = {
             ]
         },
         juros: {
+            // Manual CJF 2026 — Benefícios previdenciários (item 4.3.2):
+            // até 06/2009 = 1% a.m. simples;
+            // 07/2009–04/2012 = 0,5% a.m. simples;
+            // 05/2012–11/2021 = remuneração da poupança simples.
+            // De 12/2021–08/2025 a SELIC é tratada no bloco SELIC;
+            // a partir de 09/2025, a taxa legal previdenciária é tratada
+            // no bloco de juros e aplicada no mês seguinte à competência.
             periodos: [
-                { indice: 'JUROS_POUPANCA', inicio: '01/2020', fim: '12/2021' },
-                { indice: 'SEM_JUROS', inicio: '01/2022', fim: '08/2025' },
+                { indice: 'JUROS_1_AM', inicio: '07/1994', fim: '06/2009' },
+                { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
+                { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' },
                 { indice: 'TAXA_LEGAL_PREVIDENCIARIA', inicio: '09/2025', fim: '06/2026' }
             ]
         },
@@ -2284,10 +2329,15 @@ const ENCADEAMENTOS_OFICIAIS = {
             ]
         },
         juros: {
+            // Manual CJF 2022 — Benefícios previdenciários (item 4.3.2):
+            // até 06/2009 = 1% a.m. simples;
+            // 07/2009–04/2012 = 0,5% a.m. simples;
+            // 05/2012–11/2021 = remuneração da poupança simples.
+            // A partir de 12/2021 a SELIC é tratada no bloco SELIC.
             periodos: [
-                { indice: 'JUROS_1_AM', inicio: '01/1994', fim: '08/2001' },
-                { indice: 'JUROS_05_AM', inicio: '09/2001', fim: '06/2009' },
-                { indice: 'JUROS_POUPANCA', inicio: '07/2009', fim: '11/2021' }
+                { indice: 'JUROS_1_AM', inicio: '07/1994', fim: '06/2009' },
+                { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
+                { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' }
             ]
         },
         selic: {
@@ -2314,10 +2364,15 @@ const ENCADEAMENTOS_OFICIAIS = {
             ]
         },
         juros: {
+            // Manual CJF 2022 — Benefícios previdenciários (item 4.3.2):
+            // até 06/2009 = 1% a.m. simples;
+            // 07/2009–04/2012 = 0,5% a.m. simples;
+            // 05/2012–11/2021 = remuneração da poupança simples.
+            // A partir de 12/2021 a SELIC é tratada no bloco SELIC.
             periodos: [
-                { indice: 'JUROS_1_AM', inicio: '01/1994', fim: '08/2001' },
-                { indice: 'JUROS_05_AM', inicio: '09/2001', fim: '06/2009' },
-                { indice: 'JUROS_POUPANCA', inicio: '07/2009', fim: '11/2021' }
+                { indice: 'JUROS_1_AM', inicio: '07/1994', fim: '06/2009' },
+                { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
+                { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' }
             ]
         },
         selic: {
@@ -2423,12 +2478,12 @@ function carregarEncadeamentoOficial(nome) {
         return;
     }
 
-    var competenciaInicial = obterCompetenciaInicialEfetiva();
-
-    var periodosCorrecao = enc.correcao.periodos;
-    if (competenciaInicial) {
-        periodosCorrecao = filtrarEAjustarPeriodos(periodosCorrecao, competenciaInicial);
-    }
+    // Os encadeamentos oficiais são históricos e devem ser carregados integralmente.
+    // A competência inicial do caso é usada pelo motor no momento do cálculo;
+    // ela não deve mutilar o encadeamento nem alterar sua vigência oficial.
+    var periodosCorrecao = enc.correcao.periodos.map(function(p) {
+        return { indice: p.indice, inicio: p.inicio, fim: p.fim || '' };
+    });
     var jsonCorrecao = {
         tipoArquivo: 'parametros_atualizacao',
         tipoParametro: 'correcao_monetaria',
@@ -2439,14 +2494,12 @@ function carregarEncadeamentoOficial(nome) {
     window.parametrosCorrecaoAtual = jsonCorrecao;
     adminAtualizarStatusDetalhado('correcao_monetaria', jsonCorrecao, '✅ Correção carregada: ' + nome);
 
-    var periodosJuros = enc.juros ? enc.juros.periodos : [];
-    if (competenciaInicial && periodosJuros.length > 0) {
-        periodosJuros = filtrarEAjustarPeriodos(periodosJuros, competenciaInicial);
-    }
-    var periodosSelic = enc.selic ? enc.selic.periodos : [];
-    if (competenciaInicial && periodosSelic.length > 0) {
-        periodosSelic = filtrarEAjustarPeriodos(periodosSelic, competenciaInicial);
-    }
+    var periodosJuros = enc.juros ? enc.juros.periodos.map(function(p) {
+        return { indice: p.indice, inicio: p.inicio, fim: p.fim || '' };
+    }) : [];
+    var periodosSelic = enc.selic ? enc.selic.periodos.map(function(p) {
+        return { indice: p.indice, inicio: p.inicio, fim: p.fim || '' };
+    }) : [];
 
     var pacoteJurosSelic = {
         nome: enc.nome + ' (Juros/SELIC)',
@@ -2473,11 +2526,43 @@ function sincronizarParametrosAtualizacao() {
     var inicioJuros1 = document.getElementById('inicioJuros');
     var inicioJuros2 = document.getElementById('inicioJuros2');
 
-    if (dataAtualizacao1 && dataAtualizacao2 && !dataAtualizacao2.value) {
+    // Na entrada da Guia 5, os parâmetros de referência da Guia 1 são a fonte
+    // oficial. A sincronização ocorre ao entrar na guia e também quando o
+    // usuário altera os campos correspondentes na Guia 1.
+    if (dataAtualizacao1 && dataAtualizacao2 && dataAtualizacao1.value) {
         dataAtualizacao2.value = dataAtualizacao1.value;
     }
-    if (inicioJuros1 && inicioJuros2 && !inicioJuros2.value) {
+    if (inicioJuros1 && inicioJuros2 && inicioJuros1.value) {
         inicioJuros2.value = inicioJuros1.value;
+    }
+}
+
+function configurarSincronizacaoDatasAtualizacao() {
+    var dataAtualizacao1 = document.getElementById('dataAtualizacao');
+    var inicioJuros1 = document.getElementById('inicioJuros');
+
+    if (dataAtualizacao1 && !dataAtualizacao1.dataset.guia5Sync) {
+        dataAtualizacao1.dataset.guia5Sync = '1';
+        dataAtualizacao1.addEventListener('input', function() {
+            var destino = document.getElementById('dataAtualizacao2');
+            if (destino) destino.value = this.value;
+        });
+        dataAtualizacao1.addEventListener('change', function() {
+            var destino = document.getElementById('dataAtualizacao2');
+            if (destino) destino.value = this.value;
+        });
+    }
+
+    if (inicioJuros1 && !inicioJuros1.dataset.guia5Sync) {
+        inicioJuros1.dataset.guia5Sync = '1';
+        inicioJuros1.addEventListener('input', function() {
+            var destino = document.getElementById('inicioJuros2');
+            if (destino) destino.value = this.value;
+        });
+        inicioJuros1.addEventListener('change', function() {
+            var destino = document.getElementById('inicioJuros2');
+            if (destino) destino.value = this.value;
+        });
     }
 }
 
@@ -4149,6 +4234,8 @@ document.addEventListener('DOMContentLoaded', function() {
     configurarListenerDependencias('guia-beneficios-recebidos', ['input', 'change']);
     configurarListenerDependencias('guia-diferencas', ['input', 'change']);
     configurarListenerDependencias('guia-atualizacao', ['input', 'change']);
+
+    configurarSincronizacaoDatasAtualizacao();
 
     document.querySelectorAll('.nav-guia button').forEach(function(btn) {
         btn.addEventListener('click', function() {
