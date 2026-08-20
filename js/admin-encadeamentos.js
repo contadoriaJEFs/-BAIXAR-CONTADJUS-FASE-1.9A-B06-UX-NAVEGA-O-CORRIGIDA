@@ -2370,19 +2370,22 @@ const ENCADEAMENTOS_OFICIAIS = {
             ]
         },
         juros: {
-            // Manual CJF 2022 — Benefícios previdenciários (item 4.3.2):
-            // até 06/2009 = 1% a.m. simples;
+            // Manual CJF 2022 — Ações em Geral / Fazenda Pública (item 4.2.2):
+            // até 12/2002 = 0,5% a.m. simples;
+            // 01/2003–06/2009 = SELIC (tratada no bloco SELIC);
             // 07/2009–04/2012 = 0,5% a.m. simples;
             // 05/2012–11/2021 = remuneração da poupança simples.
-            // A partir de 12/2021 a SELIC é tratada no bloco SELIC.
+            // O encadeamento é mantido desde 07/1994, limite histórico usado pela Guia 5.
             periodos: [
-                { indice: 'JUROS_1_AM', inicio: '07/1994', fim: '06/2009' },
+                { indice: 'JUROS_05_AM', inicio: '07/1994', fim: '12/2002' },
+                { indice: 'SEM_JUROS', inicio: '01/2003', fim: '06/2009' },
                 { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
                 { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' }
             ]
         },
         selic: {
             periodos: [
+                { indice: 'SELIC', inicio: '01/2003', fim: '06/2009' },
                 { indice: 'SELIC', inicio: '12/2021', fim: '' }
             ]
         }
