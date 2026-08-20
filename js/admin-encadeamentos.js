@@ -2297,8 +2297,14 @@ const ENCADEAMENTOS_OFICIAIS = {
         },
         juros: {
             periodos: [
-                { indice: 'JUROS_POUPANCA', inicio: '01/2020', fim: '12/2021' },
-                { indice: 'SEM_JUROS', inicio: '01/2022', fim: '08/2025' },
+                // Fazenda Pública — MC-AÇÕES-GERAL-2026
+                // A SELIC possui bloco próprio; por isso, nos períodos
+                // em que ela incide, o bloco de juros de mora fica SEM_JUROS.
+                { indice: 'JUROS_05_AM', inicio: '07/1994', fim: '12/2002' },
+                { indice: 'SEM_JUROS', inicio: '01/2003', fim: '06/2009' },
+                { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
+                { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' },
+                { indice: 'SEM_JUROS', inicio: '12/2021', fim: '08/2025' },
                 { indice: 'TAXA_LEGAL', inicio: '09/2025', fim: '06/2026' }
             ]
         },
