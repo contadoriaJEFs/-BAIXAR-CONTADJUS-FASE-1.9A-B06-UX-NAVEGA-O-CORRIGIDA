@@ -1101,15 +1101,17 @@ function atualizarEncadeamentosVisuais() {
         html += '</div>';
     }
 
-    // Alerta de vigência
-    var limite = obterLimiteDoEncadeamento(
+    // A vigência jurídica do encadeamento não deve ser confundida com
+    // a disponibilidade atual da base de índices. Períodos finais abertos
+    // permanecem válidos até que outra regra os substitua.
+    var baseLimite = obterLimiteBaseDosIndexadores(
         window.parametrosCorrecaoAtual,
         window.parametrosJurosAtual,
         window.parametrosSelicAtual
     );
-    if (limite) {
+    if (baseLimite) {
         temAlgum = true;
-        html += '<div class="text-xs text-amber-600 mt-2">⚠️ Encadeamento oficial com vigência até ' + limite.ultimaCompetencia + ' (conforme Manual de Cálculos ' + limite.ultimaCompetencia.split('/')[1] + '). Datas posteriores podem não ser calculadas por inexistência de índices oficiais previstos no modelo.</div>';
+        html += '<div class="text-xs text-amber-600 mt-2">⚠️ Base de índices disponível até ' + baseLimite.ultimaCompetencia + '. A vigência das regras permanece aberta conforme o modelo; competências posteriores dependem da atualização da base.</div>';
     }
 
     if (temAlgum) {
@@ -1190,6 +1192,41 @@ function adminAtualizarStatusDetalhado(tipoEsperado, json, mensagemBase) {
 // =====================================================================
 // FUNÇÃO PARA OBTER O LIMITE TEMPORAL DO ENCADEAMENTO (Fase 1.8F-E3)
 // =====================================================================
+// =====================================================================
+// LIMITE DA BASE DE ÍNDICES (não confundir com vigência jurídica)
+// =====================================================================
+function obterLimiteBaseDosIndexadores(parametrosCorrecao, parametrosJuros, parametrosSelic) {
+    var limite = null;
+    function maxCompetenciaDaBase(codigo, tipo) {
+        if (!codigo) return null;
+        if (codigo === 'SEM_CORRECAO' || codigo === 'SEM_JUROS' ||
+            codigo === 'JUROS_1_AM' || codigo === 'JUROS_05_AM') return null;
+        var base = adminObterBasePorTipo(tipo);
+        var serie = base && base[codigo];
+        if (!serie || typeof serie !== 'object') return null;
+        var chaves = Object.keys(serie).filter(function(k) { return /^\d{4}-\d{2}$/.test(k); });
+        if (chaves.length === 0) return null;
+        chaves.sort();
+        return chaves[chaves.length - 1];
+    }
+    function examinar(periodos, tipo) {
+        if (!periodos || !Array.isArray(periodos)) return;
+        periodos.forEach(function(p) {
+            if (p.fim && p.fim.trim() !== '') return;
+            var maxISO = maxCompetenciaDaBase(p.indice, tipo);
+            if (!maxISO) return;
+            var comp = maxISO.slice(5, 7) + '/' + maxISO.slice(0, 4);
+            var num = adminCompetenciaParaNumero(comp);
+            if (isNaN(num)) return;
+            if (limite === null || num < adminCompetenciaParaNumero(limite)) limite = comp;
+        });
+    }
+    examinar(parametrosCorrecao && parametrosCorrecao.periodos, 'correcao_monetaria');
+    examinar(parametrosJuros && parametrosJuros.periodos, 'juros_mora');
+    examinar(parametrosSelic && parametrosSelic.periodos, 'selic');
+    return limite ? { ultimaCompetencia: limite } : null;
+}
+
 function obterLimiteDoEncadeamento(parametrosCorrecao, parametrosJuros, parametrosSelic) {
     var ultimaCompetencia = null;
     var origem = null;
@@ -2259,7 +2296,7 @@ const ENCADEAMENTOS_OFICIAIS = {
                 { indice: 'IGPDI', inicio: '09/1996', fim: '08/2006' },
                 { indice: 'INPC', inicio: '09/2006', fim: '11/2021' },
                 { indice: 'SEM_CORRECAO', inicio: '12/2021', fim: '08/2025' },
-                { indice: 'INPC', inicio: '09/2025', fim: '06/2026' }
+                { indice: 'INPC', inicio: '09/2025', fim: '' }
             ]
         },
         juros: {
@@ -2274,7 +2311,7 @@ const ENCADEAMENTOS_OFICIAIS = {
                 { indice: 'JUROS_1_AM', inicio: '07/1994', fim: '06/2009' },
                 { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
                 { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' },
-                { indice: 'TAXA_LEGAL_PREVIDENCIARIA', inicio: '09/2025', fim: '06/2026' }
+                { indice: 'TAXA_LEGAL_PREVIDENCIARIA', inicio: '09/2025', fim: '' }
             ]
         },
         selic: {
@@ -2292,7 +2329,7 @@ const ENCADEAMENTOS_OFICIAIS = {
                 { indice: 'IPCAE_CJF_2000', inicio: '12/2000', fim: '12/2000' },
                 { indice: 'IPCAE', inicio: '01/2001', fim: '11/2021' },
                 { indice: 'SEM_CORRECAO', inicio: '12/2021', fim: '08/2025' },
-                { indice: 'IPCAE', inicio: '09/2025', fim: '06/2026' }
+                { indice: 'IPCAE', inicio: '09/2025', fim: '' }
             ]
         },
         juros: {
@@ -2305,7 +2342,7 @@ const ENCADEAMENTOS_OFICIAIS = {
                 { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
                 { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' },
                 { indice: 'SEM_JUROS', inicio: '12/2021', fim: '08/2025' },
-                { indice: 'TAXA_LEGAL', inicio: '09/2025', fim: '06/2026' }
+                { indice: 'TAXA_LEGAL', inicio: '09/2025', fim: '' }
             ]
         },
         selic: {
@@ -2622,21 +2659,21 @@ function calcularAtualizacaoGuia5() {
     }
     var atualizacaoNum = guia5ISOParaNumero(atualizacaoISO);
 
-    // Fase 1.8F-E3: Aviso de limite temporal (não bloqueia)
-    var limite = obterLimiteDoEncadeamento(
+    // A vigência jurídica do encadeamento pode ser aberta. O limite relevante
+    // para o cálculo é a disponibilidade efetiva das séries mensais na base.
+    var baseLimiteCalculo = obterLimiteBaseDosIndexadores(
         window.parametrosCorrecaoAtual,
         window.parametrosJurosAtual,
         window.parametrosSelicAtual
     );
-    if (limite) {
-        var numUltima = adminCompetenciaParaNumero(limite.ultimaCompetencia);
-        if (!isNaN(numUltima) && !isNaN(atualizacaoNum) && atualizacaoNum > numUltima) {
+    if (baseLimiteCalculo) {
+        var numBaseLimite = adminCompetenciaParaNumero(baseLimiteCalculo.ultimaCompetencia);
+        if (!isNaN(numBaseLimite) && !isNaN(atualizacaoNum) && atualizacaoNum > numBaseLimite) {
             if (status) {
                 status.textContent =
-                    '⚠️ Atenção: o encadeamento oficial selecionado possui vigência até ' + limite.ultimaCompetencia + '.\n' +
-                    'Data de Atualização informada: ' + dataAtualizacaoBR + '\n' +
-                    'O cálculo prosseguirá com o coeficiente estacionado a partir de ' + limite.ultimaCompetencia + '.\n' +
-                    'Resultados para competências posteriores a ' + limite.ultimaCompetencia + ' serão zerados.';
+                    '⚠️ A data de atualização informada (' + dataAtualizacaoBR +
+                    ') ultrapassa a base mensal disponível até ' + baseLimiteCalculo.ultimaCompetencia +
+                    '. O encadeamento permanece vigente; atualize a base de índices para calcular competências posteriores.';
                 status.className = 'text-sm text-amber-700';
             }
         }

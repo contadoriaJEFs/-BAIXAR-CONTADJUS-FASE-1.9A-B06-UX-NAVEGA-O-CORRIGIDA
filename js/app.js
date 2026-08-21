@@ -267,18 +267,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // CORREÇÃO DO BOTÃO "APLICAR" – GUIA 5
+    // GUIA 5 — CARREGAMENTO AUTOMÁTICO DO MODELO PREDEFINIDO
+    // A seleção do modelo carrega imediatamente correção, juros e SELIC.
+    // O cálculo da conta continua dependente do botão "Calcular Atualização".
     // ============================================================
-    var btnAplicar = document.getElementById('btnAplicarModelo');
-    if (btnAplicar) {
-        btnAplicar.addEventListener('click', function() {
-            var select = document.getElementById('modeloSelect');
-            if (select && select.value) {
-                if (typeof window.carregarEncadeamentoOficial === 'function') {
-                    window.carregarEncadeamentoOficial(select.value);
-                } else {
-                    console.warn('[app.js] carregarEncadeamentoOficial não está definida.');
-                }
+    var modeloSelect = document.getElementById('modeloSelect');
+    if (modeloSelect && !modeloSelect.dataset.autoLoadModelo) {
+        modeloSelect.dataset.autoLoadModelo = '1';
+        modeloSelect.addEventListener('change', function() {
+            if (!this.value) return;
+            if (typeof window.carregarEncadeamentoOficial === 'function') {
+                window.carregarEncadeamentoOficial(this.value);
+            } else {
+                console.warn('[app.js] carregarEncadeamentoOficial não está definida.');
             }
         });
     }
