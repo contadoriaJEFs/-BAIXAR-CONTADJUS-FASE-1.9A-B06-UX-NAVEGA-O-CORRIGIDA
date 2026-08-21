@@ -1734,6 +1734,11 @@ function guia5ObterTaxaJurosMensal(indice, competenciaISO) {
             return 1;
         case 'JUROS_2_AA_EC136':
             return 2 / 12;
+        case 'SELIC':
+            // SELIC também pode compor o encadeamento de JUROS DE MORA
+            // em modelos que a utilizam nesse bloco (ex.: MC GERAL 2026 – SELIC).
+            // Não confundir com a SELIC EC 113 calculada pelo bloco próprio.
+            return guia5ObterTaxaSelicMensal(competenciaISO);
         case 'JUROS_POUPANCA':
             if (!window.BASE_INDEXADORES_JUROS || !window.BASE_INDEXADORES_JUROS.JUROS_POUPANCA) {
                 throw new Error('Base da Poupança não carregada.');
