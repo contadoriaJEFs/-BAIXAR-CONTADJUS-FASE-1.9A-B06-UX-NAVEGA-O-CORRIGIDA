@@ -116,6 +116,13 @@
                             <div>
                                 <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Data de Atualização</label>
                                 <input type="text" id="dataAtualizacao" placeholder="MM/AAAA" oninput="aplicarMascaraData(this, true)" maxlength="7" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <div class="mt-2">
+                                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Até qual competência calcular?</label>
+                                    <select id="criterioCompetenciaFinal" class="w-full px-2 py-1.5 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs">
+                                        <option value="ultimo_indice_disponivel" selected>Última competência com índices disponíveis</option>
+                                        <option value="data_atualizacao">Até a data de atualização</option>
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Início dos Juros</label>

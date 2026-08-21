@@ -2705,8 +2705,29 @@ function calcularAtualizacaoGuia5() {
         }
     }
 
+    // B31: o critério da competência final é definido nas Entradas.
+    // Padrão: última competência com índices disponíveis, preservando o
+    // comportamento validado na B30. A alternativa permite calcular até a
+    // data de atualização, sem fixar datas no código.
+    var criterioCompetenciaFinalEl = document.getElementById('criterioCompetenciaFinal');
+    var criterioCompetenciaFinal = criterioCompetenciaFinalEl
+        ? (criterioCompetenciaFinalEl.value || 'ultimo_indice_disponivel')
+        : 'ultimo_indice_disponivel';
+    var limiteCompetenciaNum = atualizacaoNum;
+    var limiteBaseAplicado = null;
+    if (criterioCompetenciaFinal === 'ultimo_indice_disponivel' && baseLimiteCalculo && baseLimiteCalculo.ultimaCompetencia) {
+        var numBaseLimiteAplicado = adminCompetenciaParaNumero(baseLimiteCalculo.ultimaCompetencia);
+        if (!isNaN(numBaseLimiteAplicado)) {
+            limiteCompetenciaNum = Math.min(limiteCompetenciaNum, numBaseLimiteAplicado);
+            if (numBaseLimiteAplicado < atualizacaoNum) {
+                limiteBaseAplicado = baseLimiteCalculo.ultimaCompetencia;
+            }
+        }
+    }
+
     var diferencasFiltradas = [];
     var excluidas = 0;
+    var excluidasPorBase = 0;
     for (var i = 0; i < window.diferencasAtualizacaoAtual.length; i++) {
         var item = window.diferencasAtualizacaoAtual[i];
         var competenciaISO = guia5CompetenciaParaISO(item.competencia);
@@ -2724,10 +2745,14 @@ function calcularAtualizacaoGuia5() {
             }
             return;
         }
-        if (guia5ISOParaNumero(competenciaISO) <= atualizacaoNum) {
+        var numCompetenciaItem = guia5ISOParaNumero(competenciaISO);
+        if (numCompetenciaItem <= limiteCompetenciaNum) {
             diferencasFiltradas.push(item);
         } else {
             excluidas++;
+            if (limiteBaseAplicado && numCompetenciaItem > adminCompetenciaParaNumero(limiteBaseAplicado)) {
+                excluidasPorBase++;
+            }
         }
     }
 
@@ -2908,6 +2933,8 @@ function calcularAtualizacaoGuia5() {
             parametrosCorrecao: window.parametrosCorrecaoAtual,
             parametrosJuros: window.parametrosJurosAtual || null,
             parametrosSelic: window.parametrosSelicAtual || null,
+            criterioCompetenciaFinal: criterioCompetenciaFinal,
+            limiteCompetenciaCalculada: limiteBaseAplicado || dataAtualizacaoBR,
             totalOriginal: totalOriginal,
             totalCorrigido: totalCorrigido,
             totalJuros: totalJuros,
@@ -2924,8 +2951,22 @@ function calcularAtualizacaoGuia5() {
         if (resumo) resumo.classList.remove('hidden');
 
         var msg = '✅ Atualização calculada com sucesso.';
+        if (criterioCompetenciaFinal === 'ultimo_indice_disponivel' && limiteBaseAplicado) {
+            msg += ' Última competência calculada: ' + limiteBaseAplicado + '.';
+        }
+        if (criterioCompetenciaFinal === 'data_atualizacao' && baseLimiteCalculo && baseLimiteCalculo.ultimaCompetencia && atualizacaoNum > adminCompetenciaParaNumero(baseLimiteCalculo.ultimaCompetencia)) {
+            msg += ' Critério final: data de atualização; a base de índices disponível vai até ' + baseLimiteCalculo.ultimaCompetencia + '.';
+        }
         if (excluidas > 0) {
-            msg += ' ' + excluidas + ' parcela(s) posterior(es) à data da conta foram desconsideradas.';
+            if (limiteBaseAplicado && excluidasPorBase > 0) {
+                msg += ' ' + excluidasPorBase + ' parcela(s) posterior(es) à última competência calculável (' + limiteBaseAplicado + ') foram desconsideradas por ausência de índices oficiais disponíveis.';
+                var posterioresData = excluidas - excluidasPorBase;
+                if (posterioresData > 0) {
+                    msg += ' ' + posterioresData + ' parcela(s) posterior(es) à data da conta também foram desconsideradas.';
+                }
+            } else {
+                msg += ' ' + excluidas + ' parcela(s) posterior(es) ao limite calculável foram desconsideradas.';
+            }
         }
         if (status) {
             status.textContent = msg;

@@ -21,7 +21,10 @@ function coletarDadosCaso() {
             datas: {
                 ajuizamento: document.getElementById('dataAjuizamento').value,
                 atualizacao: document.getElementById('dataAtualizacao').value,
-                inicioJuros: document.getElementById('inicioJuros').value
+                inicioJuros: document.getElementById('inicioJuros').value,
+                criterioCompetenciaFinal: document.getElementById('criterioCompetenciaFinal')
+                    ? document.getElementById('criterioCompetenciaFinal').value
+                    : 'ultimo_indice_disponivel' 
             },
             prescricao: {
                 aplicar: document.getElementById('aplicarPrescricao').value === 'sim',
@@ -226,6 +229,10 @@ function importarCaso(event) {
             }
             document.getElementById('dataAtualizacao').value = datas.atualizacao || '';
             document.getElementById('inicioJuros').value = datas.inicioJuros || '';
+            const criterioCompetenciaFinalEl = document.getElementById('criterioCompetenciaFinal');
+            if (criterioCompetenciaFinalEl) {
+                criterioCompetenciaFinalEl.value = datas.criterioCompetenciaFinal || 'ultimo_indice_disponivel';
+            }
 
             document.getElementById('aplicarPrescricao').value = presc.aplicar ? 'sim' : 'nao';
             document.getElementById('prazoPrescricional').value = presc.prazoAnos || 5;
