@@ -2338,7 +2338,7 @@ const ENCADEAMENTOS_OFICIAIS = {
                 // A SELIC possui bloco próprio; por isso, nos períodos
                 // em que ela incide, o bloco de juros de mora fica SEM_JUROS.
                 { indice: 'JUROS_05_AM', inicio: '07/1994', fim: '12/2002' },
-                { indice: 'SEM_JUROS', inicio: '01/2003', fim: '06/2009' },
+                { indice: 'JUROS_05_AM', inicio: '01/2003', fim: '06/2009' },
                 { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
                 { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' },
                 { indice: 'SEM_JUROS', inicio: '12/2021', fim: '08/2025' },
@@ -2402,27 +2402,26 @@ const ENCADEAMENTOS_OFICIAIS = {
                 { indice: 'INPC', inicio: '03/1991', fim: '11/1991' },
                 { indice: 'IPCAE', inicio: '12/1991', fim: '12/1991' },
                 { indice: 'UFIR', inicio: '01/1992', fim: '12/2000' },
-                { indice: 'IPCAE', inicio: '01/2001', fim: '12/2021' },
+                { indice: 'IPCAE', inicio: '01/2001', fim: '11/2021' },
                 { indice: 'SEM_CORRECAO', inicio: '01/2022', fim: '' }
             ]
         },
         juros: {
             // Manual CJF 2022 — Ações em Geral / Fazenda Pública (item 4.2.2):
             // até 12/2002 = 0,5% a.m. simples;
-            // 01/2003–06/2009 = SELIC (tratada no bloco SELIC);
+            // 01/2003–06/2009 = 0,5% a.m. simples;
             // 07/2009–04/2012 = 0,5% a.m. simples;
             // 05/2012–11/2021 = remuneração da poupança simples.
             // O encadeamento é mantido desde 07/1994, limite histórico usado pela Guia 5.
             periodos: [
                 { indice: 'JUROS_05_AM', inicio: '07/1994', fim: '12/2002' },
-                { indice: 'SEM_JUROS', inicio: '01/2003', fim: '06/2009' },
+                { indice: 'JUROS_05_AM', inicio: '01/2003', fim: '06/2009' },
                 { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
                 { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' }
             ]
         },
         selic: {
             periodos: [
-                { indice: 'SELIC', inicio: '01/2003', fim: '06/2009' },
                 { indice: 'SELIC', inicio: '12/2021', fim: '' }
             ]
         }

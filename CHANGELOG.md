@@ -662,3 +662,8 @@ O projeto preserva, sempre que possível:
 - campos novos com valores padrão em casos antigos;
 - separação entre parâmetros de Correção, Juros e SELIC;
 - cálculos já homologados durante a evolução das fases.
+
+## B24 — MC-ACOES-GERAL-2022 após teste
+- IPCAE: 01/2001–11/2021; SEM_CORRECAO a partir de 12/2021.
+- Juros: 01/2003–06/2009 = JUROS_05_AM.
+- Removida SELIC de 01/2003–06/2009; mantida no bloco SELIC a partir de 12/2021.
