@@ -1577,20 +1577,12 @@ function guia5CalcularJurosIntervalo(item, inicioJurosISO, fimISO, parametrosJur
             break;
         }
 
-        // Taxa legal: a taxa da competência é computada no mês seguinte
-        // (Manual CJF 2026, item 4.3.2, e Nota 3).
+        // Taxa Legal: aplica-se à própria competência da parcela.
+        // A vigência da base é dinâmica: o motor consulta a taxa existente
+        // para a competência corrente, sem deslocá-la para o mês seguinte.
+        // Assim, 07/2026 usa a taxa de 07/2026; 08/2026 usa a taxa de 08/2026.
         if (periodo.indice === 'TAXA_LEGAL' || periodo.indice === 'TAXA_LEGAL_PREVIDENCIARIA') {
-            var competenciaTaxaISO = guia5AnteriorCompetenciaISO(cursor);
-            var competenciaTaxaNum = guia5ISOParaNumero(competenciaTaxaISO);
-            var inicioPeriodoNum = guia5ISOParaNumero(guia5CompetenciaParaISO(periodo.inicio));
-            var fimPeriodoNum = periodo.fim ? guia5ISOParaNumero(guia5CompetenciaParaISO(periodo.fim)) : Number.MAX_SAFE_INTEGER;
-
-            if (competenciaTaxaNum < inicioPeriodoNum || competenciaTaxaNum > fimPeriodoNum) {
-                cursor = guia5ProximaCompetenciaISO(cursor);
-                continue;
-            }
-
-            var taxaLegalAplicada = guia5ObterTaxaJurosMensal(periodo.indice, competenciaTaxaISO);
+            var taxaLegalAplicada = guia5ObterTaxaJurosMensal(periodo.indice, cursor);
             totalTaxa += taxaLegalAplicada;
             meses++;
 
@@ -1600,7 +1592,7 @@ function guia5CalcularJurosIntervalo(item, inicioJurosISO, fimISO, parametrosJur
 
             detalhamentoJuros.push({
                 competenciaISO: cursor,
-                competenciaTaxaISO: competenciaTaxaISO,
+                competenciaTaxaISO: cursor,
                 indice: periodo.indice,
                 taxaPercentual: taxaLegalAplicada
             });
@@ -2311,7 +2303,7 @@ const ENCADEAMENTOS_OFICIAIS = {
             // 05/2012–11/2021 = remuneração da poupança simples.
             // De 12/2021–08/2025 a SELIC é tratada no bloco SELIC;
             // a partir de 09/2025, a taxa legal previdenciária é tratada
-            // no bloco de juros e aplicada no mês seguinte à competência.
+            // no bloco de juros e aplicada à própria competência.
             periodos: [
                 { indice: 'JUROS_1_AM', inicio: '07/1994', fim: '06/2009' },
                 { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
@@ -3218,6 +3210,23 @@ function calcularAtualizacaoAteAjuizamento() {
         var diferenca = Math.round(diferencaBase * fracaoAplicada * 100) / 100;
         var valorCorrigido = Math.round(diferenca * coef.coeficiente * 100) / 100;
 
+        // Reutiliza o motor determinístico da Guia 5 com SEM_JUROS.
+        // A Guia 6 não cria um cálculo paralelo de juros: apenas fornece
+        // ao motor um encadeamento cujo único índice é SEM_JUROS.
+        var juros = guia5CalcularJurosDeterministicos(
+            {
+                competenciaISO: competenciaISO,
+                valorCorrigido: valorCorrigido
+            },
+            competenciaFinalISO,
+            competenciaFinalISO,
+            parametrosJurosSemJuros
+        );
+
+        var valorJuros = Number(juros.valorJuros) || 0;
+        var percentualJurosTotal = Number(juros.percentualJurosTotal) || 0;
+        var detalhamentoJuros = juros.detalhamentoJuros || [];
+
         var valorSelic = 0;
         var percentualSelic = 0;
         var detalhamentoSelic = [];
@@ -3236,7 +3245,7 @@ function calcularAtualizacaoAteAjuizamento() {
             detalhamentoSelic = selic.detalhamentoSelic || [];
         }
 
-        var total = valorCorrigido + valorSelic;
+        var total = valorCorrigido + valorJuros + valorSelic;
 
         var resultadoItem = {
             competencia: item.competencia,
@@ -3245,12 +3254,12 @@ function calcularAtualizacaoAteAjuizamento() {
             criterio: coef.criterio,
             coeficiente: coef.coeficiente,
             valorCorrigido: valorCorrigido,
-            percentualJurosAntesSelic: 0,
-            percentualJurosTotal: 0,
-            valorJuros: 0,
-            criteriosJuros: ['SEM_JUROS'],
-            quantidadeMesesJuros: 0,
-            detalhamentoJuros: [],
+            percentualJurosAntesSelic: Number(juros.percentualJurosAntesSelic) || 0,
+            percentualJurosTotal: percentualJurosTotal,
+            valorJuros: valorJuros,
+            criteriosJuros: juros.criteriosJuros || ['SEM_JUROS'],
+            quantidadeMesesJuros: Number(juros.quantidadeMesesJuros) || 0,
+            detalhamentoJuros: detalhamentoJuros,
             percentualSelic: percentualSelic,
             valorSelic: valorSelic,
             detalhamentoSelic: detalhamentoSelic,
@@ -3261,7 +3270,7 @@ function calcularAtualizacaoAteAjuizamento() {
 
         totalOriginal += diferenca;
         totalCorrigido += valorCorrigido;
-        totalJuros += 0;
+        totalJuros += valorJuros;
         totalSelic += valorSelic;
         itens.push(resultadoItem);
     });
@@ -4125,6 +4134,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (btnTutorial) btnTutorial.addEventListener('click', abrirTutorialFormacaoDemanda);
     if (btnFecharTutorial) btnFecharTutorial.addEventListener('click', fecharTutorialFormacaoDemanda);
+
+    var btnCalcularFormacao = document.getElementById('btnCalcularFormacaoDemanda');
+    if (btnCalcularFormacao) {
+        btnCalcularFormacao.addEventListener('click', function() {
+            calcularFormacaoDemanda();
+        });
+    }
     if (modalTutorial) {
         modalTutorial.addEventListener('click', function(e) {
             if (e.target === modalTutorial) fecharTutorialFormacaoDemanda();

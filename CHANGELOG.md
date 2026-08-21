@@ -673,3 +673,11 @@ O projeto preserva, sempre que possível:
 - IPCAE: 01/2001–11/2021; SEM_CORRECAO a partir de 12/2021.
 - Juros: 01/2003–06/2009 = JUROS_05_AM.
 - Removida SELIC de 01/2003–06/2009; mantida no bloco SELIC a partir de 12/2021.
+
+## B28 — Correção da competência da Taxa Legal
+
+- Corrigido o deslocamento indevido da `TAXA_LEGAL` e da `TAXA_LEGAL_PREVIDENCIARIA` para o mês seguinte.
+- A taxa passa a ser consultada diretamente na competência da parcela.
+- A vigência da base permanece dinâmica e aberta: a data de atualização limita o período do cálculo, mas não desloca a competência da taxa.
+- Exemplo de validação: 07/2026 utiliza a taxa de 07/2026; 08/2026 utiliza a taxa de 08/2026.
+- Não foram alterados os encadeamentos homologados.
