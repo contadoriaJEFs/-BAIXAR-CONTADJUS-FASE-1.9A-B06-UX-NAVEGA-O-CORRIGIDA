@@ -1,4 +1,10 @@
 
+## B25 — MC GERAL 2026 – SELIC
+- Criado preset alternativo `MC-ACOES-GERAL-2026-SELIC`.
+- 01/2003–06/2009: SELIC como juros e sem correção monetária.
+- Preset `MC-ACOES-GERAL-2026` original permanece inalterado.
+
+
 ## B19 — Correção dos encadeamentos de juros da Guia 5
 
 - Encadeamentos oficiais passaram a ser carregados integralmente, sem corte pela primeira competência do caso.

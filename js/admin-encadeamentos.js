@@ -2351,6 +2351,36 @@ const ENCADEAMENTOS_OFICIAIS = {
             ]
         }
     },
+    'MC-ACOES-GERAL-2026-SELIC': {
+        nome: 'MC GERAL 2026 – SELIC',
+        descricao: 'Alternativa com aplicação da SELIC como juros de mora entre 01/2003 e 06/2009.',
+        correcao: {
+            periodos: [
+                { indice: 'UFIR', inicio: '07/1994', fim: '11/2000' },
+                { indice: 'IPCAE_CJF_2000', inicio: '12/2000', fim: '12/2000' },
+                { indice: 'IPCAE', inicio: '01/2001', fim: '12/2002' },
+                { indice: 'SEM_CORRECAO', inicio: '01/2003', fim: '06/2009' },
+                { indice: 'IPCAE', inicio: '07/2009', fim: '11/2021' },
+                { indice: 'SEM_CORRECAO', inicio: '12/2021', fim: '08/2025' },
+                { indice: 'IPCAE', inicio: '09/2025', fim: '' }
+            ]
+        },
+        juros: {
+            periodos: [
+                { indice: 'JUROS_05_AM', inicio: '07/1994', fim: '12/2002' },
+                { indice: 'SELIC', inicio: '01/2003', fim: '06/2009' },
+                { indice: 'JUROS_05_AM', inicio: '07/2009', fim: '04/2012' },
+                { indice: 'JUROS_POUPANCA', inicio: '05/2012', fim: '11/2021' },
+                { indice: 'SEM_JUROS', inicio: '12/2021', fim: '08/2025' },
+                { indice: 'TAXA_LEGAL', inicio: '09/2025', fim: '' }
+            ]
+        },
+        selic: {
+            periodos: [
+                { indice: 'SELIC', inicio: '12/2021', fim: '08/2025' }
+            ]
+        }
+    },
     'MC-PREVID-2022': {
         nome: 'MC-PREVID-2022',
         descricao: 'Manual de Cálculos Previdenciários 2022',
