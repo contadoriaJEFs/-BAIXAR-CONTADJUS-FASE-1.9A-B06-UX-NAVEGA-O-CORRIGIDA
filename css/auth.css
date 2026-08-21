@@ -48,17 +48,17 @@
 .auth-logo {
   margin-bottom: 24px;
 }
-.auth-logo h1 {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #1a2b4c;
-  letter-spacing: -0.5px;
-  margin: 0;
+.auth-logo-image {
+  display: block;
+  width: min(100%, 330px);
+  height: auto;
+  margin: 0 auto 10px;
+  object-fit: contain;
 }
 .auth-logo p {
   font-size: 0.95rem;
   color: #6b7a8f;
-  margin-top: 4px;
+  margin: 6px 0 0;
 }
 
 /* Formulário */
@@ -191,7 +191,7 @@
   .auth-container {
     padding: 32px 24px;
   }
-  .auth-logo h1 {
-    font-size: 1.8rem;
+  .auth-logo-image {
+    width: min(100%, 285px);
   }
 }
