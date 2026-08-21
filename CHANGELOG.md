@@ -686,3 +686,10 @@ O projeto preserva, sempre que possível:
 - A vigência da base permanece dinâmica e aberta: a data de atualização limita o período do cálculo, mas não desloca a competência da taxa.
 - Exemplo de validação: 07/2026 utiliza a taxa de 07/2026; 08/2026 utiliza a taxa de 08/2026.
 - Não foram alterados os encadeamentos homologados.
+
+## B33 — Simplificação da Guia 1
+- Removido o bloco "Fonte dos Índices de Reajuste" da Guia de Entradas.
+- Removido o seletor de comportamento para competência final; a data de atualização volta a ser sempre o termo final informado pelo usuário.
+- Removido o botão "Limpar" inferior, mantendo o botão "Novo caso / Limpar" do bloco Ações do Caso.
+- Mantido o botão azul "Calcular Evolução" para atualização explícita da Guia 2 após carregamento/alteração de dados.
+- Quando a última competência não possuir índice de correção disponível, a competência permanece no cálculo com coeficiente neutro, quando aplicável, em vez de ser automaticamente excluída.

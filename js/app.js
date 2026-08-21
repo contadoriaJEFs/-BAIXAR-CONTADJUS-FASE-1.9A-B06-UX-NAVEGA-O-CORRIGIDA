@@ -199,7 +199,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Inicializações gerais
-    toggleFonteIndices();
     preencherDataAtual();
     ativarGuia('entradas');
     adicionarBeneficioRecebido();
