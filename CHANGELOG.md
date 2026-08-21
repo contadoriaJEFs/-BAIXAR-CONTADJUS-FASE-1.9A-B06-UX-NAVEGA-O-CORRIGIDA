@@ -1,4 +1,9 @@
 
+## B29 — Índice inferior a 1,00
+- Corrigido o tratamento de coeficientes acumulados inferiores a 1,00.
+- O índice continua compondo o acumulado, mas não reduz o valor monetário da própria parcela abaixo do original.
+- Aplicado na Guia 5 e no cálculo mensal reutilizado pela Guia 6.
+
 ## B25 — MC GERAL 2026 – SELIC
 - Criado preset alternativo `MC-ACOES-GERAL-2026-SELIC`.
 - 01/2003–06/2009: SELIC como juros e sem correção monetária.

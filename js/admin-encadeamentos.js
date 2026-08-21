@@ -2782,7 +2782,13 @@ function calcularAtualizacaoGuia5() {
             );
 
             var diferencaOriginal = item.diferenca || 0;
-            var valorCorrigido = diferencaOriginal * resultadoCoef.coeficiente;
+            // Regra de piso: índice acumulado inferior a 1,00 conta para a
+            // composição do coeficiente e para competências posteriores, mas
+            // não pode reduzir o valor da própria parcela abaixo do original.
+            var valorCorrigidoCalculado = diferencaOriginal * resultadoCoef.coeficiente;
+            var valorCorrigido = resultadoCoef.coeficiente < 1
+                ? Math.max(diferencaOriginal, valorCorrigidoCalculado)
+                : valorCorrigidoCalculado;
 
             totalOriginal += diferencaOriginal;
             totalCorrigido += valorCorrigido;
@@ -3208,7 +3214,12 @@ function calcularAtualizacaoAteAjuizamento() {
         // vincendas é nominal e a parcela do ajuizamento não deve carregar
         // SELIC para o lado das vencidas.
         var diferenca = Math.round(diferencaBase * fracaoAplicada * 100) / 100;
-        var valorCorrigido = Math.round(diferenca * coef.coeficiente * 100) / 100;
+        var valorCorrigidoCalculado = Math.round(diferenca * coef.coeficiente * 100) / 100;
+        // O coeficiente inferior a 1,00 permanece válido para o acumulado,
+        // mas não reduz a parcela desta competência abaixo do seu original.
+        var valorCorrigido = coef.coeficiente < 1
+            ? Math.max(diferenca, valorCorrigidoCalculado)
+            : valorCorrigidoCalculado;
 
         // Reutiliza o motor determinístico da Guia 5 com SEM_JUROS.
         // A Guia 6 não cria um cálculo paralelo de juros: apenas fornece
