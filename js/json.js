@@ -22,9 +22,9 @@ function coletarDadosCaso() {
                 ajuizamento: document.getElementById('dataAjuizamento').value,
                 atualizacao: document.getElementById('dataAtualizacao').value,
                 inicioJuros: document.getElementById('inicioJuros').value,
-                criterioCompetenciaFinal: document.getElementById('criterioCompetenciaFinal')
-                    ? document.getElementById('criterioCompetenciaFinal').value
-                    : 'ultimo_indice_disponivel' 
+                comportamentoIndiceFinal: document.getElementById('comportamentoIndiceFinal')
+                    ? document.getElementById('comportamentoIndiceFinal').value
+                    : 'ultima_competencia_disponivel' 
             },
             prescricao: {
                 aplicar: document.getElementById('aplicarPrescricao').value === 'sim',
@@ -229,9 +229,12 @@ function importarCaso(event) {
             }
             document.getElementById('dataAtualizacao').value = datas.atualizacao || '';
             document.getElementById('inicioJuros').value = datas.inicioJuros || '';
-            const criterioCompetenciaFinalEl = document.getElementById('criterioCompetenciaFinal');
-            if (criterioCompetenciaFinalEl) {
-                criterioCompetenciaFinalEl.value = datas.criterioCompetenciaFinal || 'ultimo_indice_disponivel';
+            const comportamentoIndiceFinalEl = document.getElementById('comportamentoIndiceFinal');
+            if (comportamentoIndiceFinalEl) {
+                const comportamentoSalvo = datas.comportamentoIndiceFinal ||
+                    (datas.criterioCompetenciaFinal === 'data_atualizacao' ? 'sinalizar_indisponibilidade' :
+                     datas.criterioCompetenciaFinal === 'ultimo_indice_disponivel' ? 'ultima_competencia_disponivel' : 'ultima_competencia_disponivel');
+                comportamentoIndiceFinalEl.value = comportamentoSalvo;
             }
 
             document.getElementById('aplicarPrescricao').value = presc.aplicar ? 'sim' : 'nao';

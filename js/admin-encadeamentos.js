@@ -2705,23 +2705,33 @@ function calcularAtualizacaoGuia5() {
         }
     }
 
-    // B31: o critério da competência final é definido nas Entradas.
-    // Padrão: última competência com índices disponíveis, preservando o
-    // comportamento validado na B30. A alternativa permite calcular até a
-    // data de atualização, sem fixar datas no código.
-    var criterioCompetenciaFinalEl = document.getElementById('criterioCompetenciaFinal');
-    var criterioCompetenciaFinal = criterioCompetenciaFinalEl
-        ? (criterioCompetenciaFinalEl.value || 'ultimo_indice_disponivel')
-        : 'ultimo_indice_disponivel';
+    // B32: a disponibilidade dos índices é um comportamento do cálculo,
+    // não uma segunda definição de "termo final". A data de atualização
+    // continua sendo a data final solicitada pelo usuário. Quando faltarem
+    // índices para chegar a ela, o usuário escolhe entre usar a última
+    // competência disponível ou interromper o cálculo com aviso.
+    var comportamentoIndiceFinalEl = document.getElementById('comportamentoIndiceFinal');
+    var comportamentoIndiceFinal = comportamentoIndiceFinalEl
+        ? (comportamentoIndiceFinalEl.value || 'ultima_competencia_disponivel')
+        : 'ultima_competencia_disponivel';
     var limiteCompetenciaNum = atualizacaoNum;
     var limiteBaseAplicado = null;
-    if (criterioCompetenciaFinal === 'ultimo_indice_disponivel' && baseLimiteCalculo && baseLimiteCalculo.ultimaCompetencia) {
+    var baseInsuficiente = !!(baseLimiteCalculo && baseLimiteCalculo.ultimaCompetencia &&
+        adminCompetenciaParaNumero(baseLimiteCalculo.ultimaCompetencia) < atualizacaoNum);
+
+    if (baseInsuficiente && comportamentoIndiceFinal === 'sinalizar_indisponibilidade') {
+        if (status) {
+            status.textContent = '❌ Não foi possível calcular até ' + dataAtualizacaoBR + ': os índices oficiais disponíveis na base alcançam somente ' + baseLimiteCalculo.ultimaCompetencia + '. Atualize a base de índices ou selecione “Usar a última competência disponível”.';
+            status.className = 'text-sm text-red-700';
+        }
+        return;
+    }
+
+    if (baseInsuficiente && comportamentoIndiceFinal === 'ultima_competencia_disponivel' && baseLimiteCalculo.ultimaCompetencia) {
         var numBaseLimiteAplicado = adminCompetenciaParaNumero(baseLimiteCalculo.ultimaCompetencia);
         if (!isNaN(numBaseLimiteAplicado)) {
             limiteCompetenciaNum = Math.min(limiteCompetenciaNum, numBaseLimiteAplicado);
-            if (numBaseLimiteAplicado < atualizacaoNum) {
-                limiteBaseAplicado = baseLimiteCalculo.ultimaCompetencia;
-            }
+            limiteBaseAplicado = baseLimiteCalculo.ultimaCompetencia;
         }
     }
 
@@ -2933,7 +2943,7 @@ function calcularAtualizacaoGuia5() {
             parametrosCorrecao: window.parametrosCorrecaoAtual,
             parametrosJuros: window.parametrosJurosAtual || null,
             parametrosSelic: window.parametrosSelicAtual || null,
-            criterioCompetenciaFinal: criterioCompetenciaFinal,
+            comportamentoIndiceFinal: comportamentoIndiceFinal,
             limiteCompetenciaCalculada: limiteBaseAplicado || dataAtualizacaoBR,
             totalOriginal: totalOriginal,
             totalCorrigido: totalCorrigido,
@@ -2951,10 +2961,10 @@ function calcularAtualizacaoGuia5() {
         if (resumo) resumo.classList.remove('hidden');
 
         var msg = '✅ Atualização calculada com sucesso.';
-        if (criterioCompetenciaFinal === 'ultimo_indice_disponivel' && limiteBaseAplicado) {
+        if (comportamentoIndiceFinal === 'ultima_competencia_disponivel' && limiteBaseAplicado) {
             msg += ' Última competência calculada: ' + limiteBaseAplicado + '.';
         }
-        if (criterioCompetenciaFinal === 'data_atualizacao' && baseLimiteCalculo && baseLimiteCalculo.ultimaCompetencia && atualizacaoNum > adminCompetenciaParaNumero(baseLimiteCalculo.ultimaCompetencia)) {
+        if (comportamentoIndiceFinal === 'sinalizar_indisponibilidade' && baseLimiteCalculo && baseLimiteCalculo.ultimaCompetencia && atualizacaoNum > adminCompetenciaParaNumero(baseLimiteCalculo.ultimaCompetencia)) {
             msg += ' Critério final: data de atualização; a base de índices disponível vai até ' + baseLimiteCalculo.ultimaCompetencia + '.';
         }
         if (excluidas > 0) {
