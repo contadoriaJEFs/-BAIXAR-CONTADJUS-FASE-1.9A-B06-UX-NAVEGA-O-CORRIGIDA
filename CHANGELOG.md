@@ -693,3 +693,9 @@ O projeto preserva, sempre que possível:
 - Removido o botão "Limpar" inferior, mantendo o botão "Novo caso / Limpar" do bloco Ações do Caso.
 - Mantido o botão azul "Calcular Evolução" para atualização explícita da Guia 2 após carregamento/alteração de dados.
 - Quando a última competência não possuir índice de correção disponível, a competência permanece no cálculo com coeficiente neutro, quando aplicável, em vez de ser automaticamente excluída.
+
+
+## B34 — Campos de entrada manual da Guia 1 com fundo branco
+- Padronizados inputs, selects e textareas editáveis da Guia 1 com fundo branco.
+- Campos `readonly`/automáticos permanecem com a aparência diferenciada.
+- Checkboxes, radios, arquivos e campos ocultos não foram afetados.

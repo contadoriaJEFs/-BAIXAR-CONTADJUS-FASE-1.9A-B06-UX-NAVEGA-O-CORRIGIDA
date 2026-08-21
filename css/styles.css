@@ -503,6 +503,17 @@
 }
 
 /* ===================================================================== */
+/* ===== GUIA 1 – CAMPOS DE ENTRADA MANUAL ===== */
+/* ===================================================================== */
+/* Branco = campo que o usuário pode preencher/selecionar.
+   Campos readonly/automáticos permanecem com sua aparência própria. */
+#guia-entradas input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([readonly]),
+#guia-entradas select,
+#guia-entradas textarea {
+    background-color: #ffffff !important;
+}
+
+/* ===================================================================== */
 /* ===== RMI AUTOMÁTICA (readonly com fundo cinza) ===== */
 /* ===================================================================== */
 
